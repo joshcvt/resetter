@@ -1,9 +1,6 @@
-import urllib2, ConfigParser, json, traceback, re, argparse		 #, logging
-from datetime import timedelta, datetime, date
+#!/usr/bin/env python
+
 from string import Template, join
-#from xml.dom.minidom import parse
-import xml.etree.ElementTree as ET
-from os import sys
 
 from chalicelib.resetter import launch
 
