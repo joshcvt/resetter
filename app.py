@@ -19,7 +19,7 @@ def index():
 	except:
 		team = 'WSH'
 	print "getting for team " + team
-	retList = launch(team,true)
+	retList = launch(team,True)
 	print "we got a return: " + str(retList)
 	if len(retList) == 1:
 		return { "response_type": "in_channel", "text": retList[0] }
