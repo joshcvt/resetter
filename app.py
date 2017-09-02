@@ -22,7 +22,11 @@ def index():
 	retList = launch(team,True)
 	print "we got a return: " + str(retList)
 	if len(retList) == 1:
-		return { "response_type": "in_channel", "text": retList[0] }
+		rtext = retList[0]
 	else:
-		return { "response_type": "in_channel", "text": join(retList," ") }
+		rtext = join(retList," ")
+	
+	if rtext.startswith("I'm sorry, I didn't recognize team"):
+		rtext = rtext.replace("I'm sorry, I didn't recognize team","I'm sorry, I can't reset")
 
+	return { "response_type": "in_channel", "text": rtext }
