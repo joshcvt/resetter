@@ -4,3 +4,5 @@
 
 .chalice/*.json
 !.chalice/config.json
+
+samples/
