@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from string import Template, join
+from string import join
 
 from chalicelib.resetter import launch
 
