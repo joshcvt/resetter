@@ -2,9 +2,11 @@
 
 from string import join
 
-from chalicelib.resetter import launch
+from chalicelib.resetter import launch as get_mlb
 
 from chalice import Chalice
+
+DEFAULT_PARAM = "WSH"
 
 app = Chalice(app_name='resetter')
 
@@ -15,11 +17,11 @@ def index():
 	try:
 		team = app.current_request.query_params['text']
 		if team == '':
-			team = 'WSH'
+			team = DEFAULT_PARAM
 	except:
-		team = 'WSH'
+		team = DEFAULT_PARAM
 	print "getting for team " + team
-	retList = launch(team,True)
+	retList = get_mlb(team,True)
 	print "we got a return: " + str(retList)
 	if len(retList) == 1:
 		rtext = retList[0]
