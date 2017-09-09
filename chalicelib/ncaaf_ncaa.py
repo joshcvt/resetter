@@ -2,6 +2,7 @@
 
 import urllib2, json, time
 from datetime import datetime, timedelta
+from reset_lib import ncaaNickDict, displayOverrides
 
 SCOREBOARD_URL = "http://data.ncaa.com/jsonp/scoreboard/football/fbs/2017/WHAT_WEEK/scoreboard.html?callback=ncaaScoreboard.dispScoreboard"
 
@@ -17,6 +18,8 @@ DST_FLIP_UTC = datetime(2017,11,5,6,0)
 
 # what we expect the API to give us.  EST/EDT, most likely.
 API_TZ_STD_DT = (-5,-4)
+
+
 
 def what_week():
 	delta = datetime.utcnow() - WEEK_1_2_FLIP_UTC
@@ -54,7 +57,7 @@ def find_game(sb,team):
 
 def test_game(game,team):
 	"""Broken out so we can test for all kinds of variations once we build the variation list."""
-	return (game["home"]["nameRaw"].lower() == team.lower() or game["away"]["nameRaw"].lower() == team.lower())
+	return (game["home"]["nameRaw"].strip().lower() == team.lower() or game["away"]["nameRaw"].strip().lower() == team.lower())
 	
 def game_loc(game):
 	sp = game["location"].split(",")
@@ -65,10 +68,18 @@ def game_loc(game):
 		return "At " + game["location"].strip()	
 
 def rank_name(team):
-	if team["teamRank"] == "0":
-		return team["nameRaw"].strip()
+	
+	raw = team["nameRaw"].strip()
+	
+	if raw.lower() in displayOverrides:
+		pref = displayOverrides[raw.lower()]
 	else:
-		return "#" + team["teamRank"].strip() + " " + team["nameRaw"].strip()
+		pref = raw
+		
+	if team["teamRank"] == "0":
+		return pref
+	else:
+		return "#" + team["teamRank"].strip() + " " + pref
 
 def scoreline(game):
 	if int(game["home"]["currentScore"]) > int(game["away"]["currentScore"]):
