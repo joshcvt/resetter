@@ -3,6 +3,8 @@
 from string import join
 
 from chalicelib.resetter import launch as get_mlb
+from chalicelib.ncaaf_ncaa import get as get_ncaaf
+
 
 from chalice import Chalice
 
@@ -20,7 +22,18 @@ def index():
 	except:
 		team = DEFAULT_PARAM
 	print "getting for team " + team
-	retList = get_mlb(team,True)
+	
+	if team.strip().lower().endswith("football"):
+		retList = get_ncaaf(team[:-8].strip())
+				
+	else:	
+		retList = get_mlb(team,True)
+		if retList == None:
+			# try football?
+			retList = get_ncaaf(team)
+	
+	if retList and (retList.__class__ != list):
+		retList = [retList]
 	
 	if retList == None:
 		rtext = "I'm sorry, I can't reset " + team + "."
