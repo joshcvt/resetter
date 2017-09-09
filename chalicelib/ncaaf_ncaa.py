@@ -2,7 +2,7 @@
 
 import urllib2, json, time
 from datetime import datetime, timedelta
-from reset_lib import ncaaNickDict, displayOverrides
+from reset_lib import ncaaNickDict, displayOverrides, joinOr
 
 SCOREBOARD_URL = "http://data.ncaa.com/jsonp/scoreboard/football/fbs/2017/WHAT_WEEK/scoreboard.html?callback=ncaaScoreboard.dispScoreboard"
 
@@ -126,8 +126,18 @@ def get(team):
 	
 	sb = get_scoreboard()
 	game = find_game(sb,team)
+	tkey = team.lower().strip()
 	if game:
 		return status(game)
+	elif (tkey in ncaaNickDict):
+		if (ncaaNickDict[tkey].__class__ == list):
+			return "For " + team + ", please choose " + joinOr(ncaaNickDict[tkey] + ".")
+		else:
+			game = find_game(sb,ncaaNickDict[tkey])
+			if game:
+				return status(game)
+			else:
+				return None
 	else:
 		return None
 		

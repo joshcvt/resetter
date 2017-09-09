@@ -1,5 +1,19 @@
 #!/usr/bin/env python
 
+from string import join
+
+def joinOr(li):
+	if li.__class__ != list:
+		raise Exception
+	if len(li) < 2:
+		return join(li,",")
+	elif len(li) == 2:
+		return join(li," or ")
+	else:
+		commas = join(li[:-2],", ")
+		return commas + ", " + li[-2] + ", or " + li[-1]
+	
+
 ncaaNickDict = {'rebels': 'unlv', 
 	'warhawks': 'la.-monroe', 'louisiana-monroe': 'la.-monroe', 
 	'cougars': 'washington st.', 'wsu': 'washington st.', 'washington state': 'washington st.',
