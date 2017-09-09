@@ -91,7 +91,7 @@ def scoreline(game):
 	
 	return (rank_name(gleader) + " " + gleader["currentScore"].strip() + ", " + rank_name(gtrailer) + " " + gtrailer["currentScore"].strip())
 
-def spaceday_if_not_today(game):
+def spaceday_if_not_today(game,sayToday=False):
 	now = datetime.utcnow()
 	#system_utc_offset_hours = (time.timezone if (time.localtime().tm_isdst == 0) else time.altzone) / 60 / 60 * -1
 	if (now < DST_FLIP_UTC):
@@ -100,14 +100,20 @@ def spaceday_if_not_today(game):
 		now += timedelta(hours=API_TZ_STD_DT[0])
 	# so now is in ET to compare with the game day.
 	if (now.strftime('%Y-%m-%d') == game['startDate']):
-		return ''
+		if sayToday:
+			return ' today'
+		else:
+			return ''
 	else:
 		return ' ' + datetime.strptime(game['startDate'],'%Y-%m-%d').strftime("%A")
 	
 
 def status(game):
+
+	if game == None:
+		return None
 	
-	if game["gameState"] == "final":
+	elif game["gameState"] == "final":
 		(loc_word, loc_loc) = game_loc(game).split(" ",1)
 		status = "Final " + loc_word.lower() + " " + loc_loc + ", " + scoreline(game) + "."
 		
@@ -118,6 +124,9 @@ def status(game):
 	elif game["gameState"] == "pre":
 		
 		status = game_loc(game) + ", " + rank_name(game["away"]) + " plays " + rank_name(game["home"]) + " at " + game["startTime"].strip() + spaceday_if_not_today(game) + "."
+	
+	elif game["gameState"] == "cancelled":
+		status = rank_name(game["away"]) + " vs. " + rank_name(game["home"]) + " originally scheduled for" + spaceday_if_not_today(game,sayToday=True) + " is cancelled."
 	
 	return status
 
