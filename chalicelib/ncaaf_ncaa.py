@@ -119,7 +119,11 @@ def status(game):
 		
 	elif game["gameState"] == "live":
 		
-		status = game_loc(game) + ", " + scoreline(game) + ", " + game["timeclock"].strip() + " to go in the " + game["currentPeriod"].strip() + ". "
+		status = game_loc(game) + ", " + scoreline(game) 
+		if game["currentPeriod"].strip() == "Halftime":
+			status += " at halftime."
+		else:
+			status += ", " + game["timeclock"].strip() + " to go in the " + game["currentPeriod"].strip() + ". "
 		
 	elif game["gameState"] == "pre":
 		
