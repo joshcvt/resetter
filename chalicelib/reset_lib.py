@@ -16,7 +16,7 @@ def joinOr(li):
 
 ncaaNickDict = {'rebels': 'unlv', 
 	'warhawks': 'la.-monroe', 'louisiana-monroe': 'la.-monroe', 
-	'cougars': 'washington st.', 'wsu': 'washington st.', 'washington state': 'washington st.',
+	'cougars': 'washington st.', 'wsu': 'washington st.', 'washington state': 'washington st.','wazzu':'washington st.',
 	'wolverines': 'michigan', 
 	'panthers': 'pittsburgh', 'pitt': 'pittsburgh',
 	'thundering herd': 'marshall', 
@@ -58,7 +58,7 @@ ncaaNickDict = {'rebels': 'unlv',
 	'monarchs': 'old dominion', 
 	'buckeyes': 'ohio st.', 'ohio state': 'ohio st.', 'tosu':'ohio st.',
 	'bulls': 'south florida', 
-	'black knights': 'army', 
+	'black knights': 'army west point', 'army':'army west point','west point':'army west point',
 	'knights': 'ucf', 
 	'zips': 'akron', 
 	'fighting irish': 'notre dame', 'irish':'notre dame',
@@ -125,5 +125,7 @@ displayOverrides = {
 	'western mich.': "Western Michigan",
 	'cent. michigan': 'Central Michigan',
 	'coastal caro.':'Coastal Carolina',
-	'ga. southern':'Georgia Southern'
+	'ga. southern':'Georgia Southern',
+	'south florida':'USF',
+	'washington st.':'Washington State'
 }
