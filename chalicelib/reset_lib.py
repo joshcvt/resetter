@@ -15,7 +15,7 @@ def joinOr(li):
 
 # This dictionary is in some ways opinionated. Sorry, all non-Texas Aggies.
 ncaaNickDict = {'rebels': 'unlv', 
-	'warhawks': 'la.-monroe', 'louisiana-monroe': 'la.-monroe', 
+	'warhawks': 'la.-monroe', 'louisiana-monroe': 'la.-monroe', "ulm":"la.-monroe",
 	'cougars': 'washington st.', 'wsu': 'washington st.', 'washington state': 'washington st.','wazzu':'washington st.',
 	'wolverines': 'michigan', 
 	'panthers': 'pittsburgh', 'pitt': 'pittsburgh',
@@ -48,7 +48,7 @@ ncaaNickDict = {'rebels': 'unlv',
 	'cowboys': 'wyoming', 
 	'golden flashes': 'kent state', 
 	'commodores': 'vanderbilt', 'vandy':'vanderbilt',
-	"ragin' cajuns": 'louisiana', 'louisiana-lafayette':'louisiana', 
+	"ragin' cajuns": 'louisiana', 'louisiana-lafayette':'louisiana', 'ul-lafayette':'louisiana','ull':'louisiana',
 	'longhorns': 'texas', 
 	'sooners': 'oklahoma', 
 	'terrapins': 'maryland', 
@@ -75,7 +75,7 @@ ncaaNickDict = {'rebels': 'unlv',
 	'bears': 'baylor', 
 	'eagles': 'ga. southern', 'georgia southern':'ga. southern',
 	'seminoles': 'florida state', 'noles': 'florida state',
-	'tigers': ['Missouri', 'Clemson', 'Auburn', 'LSU'], 'mizzou':'missouri',
+	'tigers': ['Missouri', 'Clemson', 'Auburn', 'LSU', "Memphis"], 'mizzou':'missouri',
 	'bulldogs': ['Mississippi State','Georgia'], 'mississippi state':'mississippi st.', 'dawgs':'georgia', 
 	'wolfpack': 'nc state', 'north carolina state': 'nc state', 'n.c. state': 'nc state', 
 	'mountaineers': 'west virginia', 'eers': 'west virginia', 'wvu': 'west virginia',
@@ -111,8 +111,9 @@ ncaaNickDict = {'rebels': 'unlv',
 	'bruins': 'ucla', 
 	'falcons': 'bowling green', 
 	'minutemen': 'massachusetts', 'umass': 'massachusetts', 
-	'volunteers': 'tennessee', 'vols':'tennessee', 'vawls': "tennessee", "ut":["Tennessee","Texas"],
-	'mean green': 'north texas'
+	'volunteers': 'tennessee', 'vols':'tennessee', 'vawls': "tennessee", 'rocky top': "tennessee", "ut":["Tennessee","Texas"],
+	'mean green': 'north texas',
+	'mumphus':"memphis","menphis":'memphis',"mumphis":"memphis"
 }
 
 displayOverrides = {
@@ -128,5 +129,7 @@ displayOverrides = {
 	'ga. southern':'Georgia Southern',
 	'south florida':'USF',
 	'washington st.':'Washington State',
-	'northern ill.':"Northern Illinois"
+	'northern ill.':"Northern Illinois",
+	'louisiana':"Louisiana-Lafayette",
+	"la.-monroe":'Louisiana-Monroe'
 }
