@@ -20,6 +20,7 @@ DST_FLIP_UTC = datetime(2017,11,5,6,0)
 # what we expect the API to give us.  EST/EDT, most likely.
 API_TZ_STD_DT = (-5,-4)
 
+__MOD = {}
 
 
 def what_week():
@@ -145,7 +146,13 @@ def status(game):
 
 def get(team):
 	
-	sb = get_scoreboard()
+	global __MOD
+	
+	#sb = get_scoreboard()
+	if "sb" not in __MOD:
+		__MOD["sb"] = get_scoreboard()
+	sb = __MOD["sb"]
+	
 	game = find_game(sb,team)
 	tkey = team.lower().strip()
 	if game:
