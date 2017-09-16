@@ -2,7 +2,7 @@
 
 import urllib2, json, time
 from datetime import datetime, timedelta
-from reset_lib import ncaaNickDict, displayOverrides, joinOr
+from reset_lib import ncaaNickDict, displayOverrides, joinOr, sentenceCap
 
 SCOREBOARD_URL = "http://data.ncaa.com/jsonp/scoreboard/football/fbs/2017/WHAT_WEEK/scoreboard.html?callback=ncaaScoreboard.dispScoreboard"
 
@@ -64,16 +64,16 @@ def game_loc(game):
 	sp = game["location"].rsplit(",",2)
 	if len(sp) != 3:
 		# something that definitely isn't stadium, city, state, so just return it all
-		return "At " + game["location"].strip()	
+		return "at " + game["location"].strip()	
 	else:
 		# if this matches either no commas or a "Memorial Stadium (Lincoln, NE)" pattern, it's standard
 		# regex would be simpler, but I'd like to save importing re if I can
 		stsp = sp[0].strip().split(",")
 		if ((len(stsp) == 1) or ((len(stsp) == 2) and ("(" in stsp[0]) and stsp[1].endswith(")"))):
-			return "In " + sp[1].strip()
+			return "in " + sp[1].strip()
 		else:
 			# it's something messy, send it all back.
-			return "At " + game["location"].strip()	
+			return "at " + game["location"].strip()	
 		
 
 def rank_name(team):
@@ -123,8 +123,7 @@ def status(game):
 		return None
 	
 	elif game["gameState"] == "final":
-		(loc_word, loc_loc) = game_loc(game).split(" ",1)
-		status = "Final " + loc_word.lower() + " " + loc_loc + ", " + scoreline(game) + "."
+		status = "Final " + game_loc(game) + ", " + scoreline(game) + "."
 		
 	elif game["gameState"] == "live":
 		
@@ -141,7 +140,7 @@ def status(game):
 	elif game["gameState"] == "cancelled":
 		status = rank_name(game["away"]) + " vs. " + rank_name(game["home"]) + " originally scheduled for" + spaceday(game,sayToday=True) + " is cancelled."
 	
-	return status
+	return sentenceCap(status)
 
 
 def get(team):
