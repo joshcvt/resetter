@@ -2,7 +2,7 @@
 
 import urllib2, json, time
 from datetime import datetime, timedelta
-from reset_lib import ncaaNickDict, displayOverrides, joinOr, sentenceCap
+from reset_lib import ncaaNickDict, displayOverrides, joinOr, sentenceCap, iaa
 
 SCOREBOARD_URL = "http://data.ncaa.com/jsonp/scoreboard/football/fbs/2017/WHAT_WEEK/scoreboard.html?callback=ncaaScoreboard.dispScoreboard"
 
@@ -30,7 +30,7 @@ def what_week():
 	else:
 		return ("%02d" % ((delta.days/7)+2,))
 
-def get_scoreboard(file=None):
+def get_scoreboard(file=None,iaa=False):
 	"""Get scoreboard from site, or from file if specified for testing."""
 	
 	if not file:
@@ -38,6 +38,8 @@ def get_scoreboard(file=None):
 		opener.addheaders = [('User-agent', 'Mozilla/5.0')]
 		urllib2.install_opener(opener)
 		week_url = SCOREBOARD_URL.replace("WHAT_WEEK",what_week())
+		if iaa:
+			week_url = week_url.replace("fbs","fcs")
 		fh = urllib2.urlopen(week_url)	
 	else:
 		fh = open(file)
@@ -144,14 +146,19 @@ def status(game):
 	return sentenceCap(status)
 
 
-def get(team):
+def get(team,setLocal=False):
 	
 	global __MOD
 	
 	#sb = get_scoreboard()
-	if "sb" not in __MOD:
-		__MOD["sb"] = get_scoreboard()
-	sb = __MOD["sb"]
+	if (team in iaa) or (team in ncaaNickDict and ncaaNickDict[team] in iaa):
+		sb = get_scoreboard(iaa=True)
+	elif setLocal:
+		if "sb" not in __MOD:
+			__MOD["sb"] = get_scoreboard()
+		sb = __MOD["sb"]
+	else:
+		sb = get_scoreboard()
 	
 	game = find_game(sb,team)
 	tkey = team.lower().strip()

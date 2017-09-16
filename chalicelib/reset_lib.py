@@ -46,9 +46,9 @@ ncaaNickDict = {'rebels': 'unlv',
 	'hokies': 'virginia tech', 'vt': 'virginia tech',
 	'huskies': 'washington', 
 	'cornhuskers': 'nebraska', 
-	'wildcats': ['Northwestern','Kentucky'], 
+	'wildcats': ['Northwestern','Kentucky','Villanova','New Hampshire'], 
 	'rockets': 'toledo', 
-	'nittany lions': 'penn st.', 'penn state':'penn st.',
+	'nittany lions': 'penn st.', 'penn state':'penn st.', "lions":"penn st.",
 	'demon deacons': 'wake forest', 
 	'gamecocks': 'south carolina', 
 	'red raiders': 'texas tech', 
@@ -73,7 +73,7 @@ ncaaNickDict = {'rebels': 'unlv',
 	'zips': 'akron', 
 	'fighting irish': 'notre dame', 'irish':'notre dame',
 	'horned frogs': 'tcu', 
-	'rams': 'colorado state', 
+	'rams': ['Colorado State', 'Rhode Island'],
 	'49ers': 'charlotte', 
 	'yellow jackets': 'georgia tech', 'jackets':'georgia tech', 'gt':'georgia tech',
 	'badgers': 'wisconsin', 
@@ -85,7 +85,7 @@ ncaaNickDict = {'rebels': 'unlv',
 	'bears': 'baylor', 
 	'eagles': 'ga. southern', 'georgia southern':'ga. southern',
 	'seminoles': 'florida state', 'noles': 'florida state',
-	'tigers': ['Missouri', 'Clemson', 'Auburn', 'LSU', "Memphis"], 'mizzou':'missouri',
+	'tigers': ['Missouri', 'Clemson', 'Auburn', 'LSU', "Memphis","Towson"], 'mizzou':'missouri',
 	'bulldogs': ['Mississippi State','Georgia'], 'mississippi state':'mississippi st.', 'dawgs':'georgia', 
 	'wolfpack': 'nc state', 'north carolina state': 'nc state', 'n.c. state': 'nc state', 
 	'mountaineers': 'west virginia', 'eers': 'west virginia', 'wvu': 'west virginia',
@@ -124,8 +124,17 @@ ncaaNickDict = {'rebels': 'unlv',
 	'volunteers': 'tennessee', 'vols':'tennessee', 'vawls': "tennessee", 'rocky top': "tennessee", "ut":["Tennessee","Texas"],
 	'mean green': 'north texas',
 	'mumphus':"memphis","menphis":'memphis',"mumphis":"memphis",
-	'northern illinois':'northern ill.'
+	'northern illinois':'northern ill.',
+	'seawolves':'stony brook','unh':'new hampshire','nova':'villanova',#'towson',
+	'spiders':'richmond','udel':'delaware','blue hens':'delaware',
+	'dukes':'james madison','jmu':'james madison','tribe':'william & mary',
+	'phoenix':'elon','great danes':'albany','black bears':'maine','uri':'rhode island'
 }
+
+# permissible teams in FCS/I-AA
+iaa = ('stony brook','new hampshire','villanova','towson','richmond','delaware',
+	'james madison','william & mary','elon','albany','maine','rhode island'
+)
 
 displayOverrides = {
 	'ohio st.': "Ohio State",
