@@ -123,7 +123,8 @@ ncaaNickDict = {'rebels': 'unlv',
 	'minutemen': 'massachusetts', 'umass': 'massachusetts', 
 	'volunteers': 'tennessee', 'vols':'tennessee', 'vawls': "tennessee", 'rocky top': "tennessee", "ut":["Tennessee","Texas"],
 	'mean green': 'north texas',
-	'mumphus':"memphis","menphis":'memphis',"mumphis":"memphis"
+	'mumphus':"memphis","menphis":'memphis',"mumphis":"memphis",
+	'northern illinois':'northern ill.'
 }
 
 displayOverrides = {
