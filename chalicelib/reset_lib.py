@@ -14,8 +14,8 @@ def joinOr(li):
 		return commas + ", " + li[-2] + ", or " + li[-1]
 
 def sentenceCap(sen):
-	if sen.__class__ != str:
-		raise Exception
+	if sen.__class__ not in (str, unicode):
+		raise Exception("sen class is not string, is " + sen.__class__.__name__)
 	elif len(sen) == 0:
 		return sen
 	elif len(sen) == 1:
