@@ -7,8 +7,9 @@ from reset_lib import ncaaNickDict, displayOverrides, joinOr
 SCOREBOARD_URL = "http://data.ncaa.com/jsonp/scoreboard/football/fbs/2017/WHAT_WEEK/scoreboard.html?callback=ncaaScoreboard.dispScoreboard"
 
 # these are season (year) specific before/after times in UTC
-# we specify week1/week2 because Week 1 is often more than a week. 
-# From this time, though, we can trust that the rest of the weeks are in fact weeks.
+# we specify the week1/week2 break because Week 1 is often more than a week. 
+# From this time, though, we can trust that the rest of the weeks are in fact Tuesday-Monday
+# weeks -- even in bowl season, at least in 2016.
 WEEK_1_2_FLIP_UTC = datetime(2017,9,5,16,0)
 
 # when, during the season, we go from EDT to EST.
@@ -60,12 +61,20 @@ def test_game(game,team):
 	return (game["home"]["nameRaw"].strip().lower() == team.lower() or game["away"]["nameRaw"].strip().lower() == team.lower())
 	
 def game_loc(game):
-	sp = game["location"].split(",")
-	if len(sp) == 3:
-		return "In " + sp[1].strip()	# probably city
-	else:
-		# something that isn't stadium, city, state, so just return it all
+	sp = game["location"].rsplit(",",2)
+	if len(sp) != 3:
+		# something that definitely isn't stadium, city, state, so just return it all
 		return "At " + game["location"].strip()	
+	else:
+		# if this matches either no commas or a "Memorial Stadium (Lincoln, NE)" pattern, it's standard
+		# regex would be simpler, but I'd like to save importing re if I can
+		stsp = sp[0].strip().split(",")
+		if ((len(stsp) == 1) or ((len(stsp) == 2) and ("(" in stsp[0]) and stsp[1].endswith(")"))):
+			return "In " + sp[1].strip()
+		else:
+			# it's something messy, send it all back.
+			return "At " + game["location"].strip()	
+		
 
 def rank_name(team):
 	
@@ -91,7 +100,7 @@ def scoreline(game):
 	
 	return (rank_name(gleader) + " " + gleader["currentScore"].strip() + ", " + rank_name(gtrailer) + " " + gtrailer["currentScore"].strip())
 
-def spaceday_if_not_today(game,sayToday=False):
+def spaceday(game,sayToday=False):
 	now = datetime.utcnow()
 	#system_utc_offset_hours = (time.timezone if (time.localtime().tm_isdst == 0) else time.altzone) / 60 / 60 * -1
 	if (now < DST_FLIP_UTC):
@@ -127,10 +136,10 @@ def status(game):
 		
 	elif game["gameState"] == "pre":
 		
-		status = game_loc(game) + ", " + rank_name(game["away"]) + " plays " + rank_name(game["home"]) + " at " + game["startTime"].strip() + spaceday_if_not_today(game) + "."
+		status = game_loc(game) + ", " + rank_name(game["away"]) + " plays " + rank_name(game["home"]) + " at " + game["startTime"].strip() + spaceday(game) + "."
 	
 	elif game["gameState"] == "cancelled":
-		status = rank_name(game["away"]) + " vs. " + rank_name(game["home"]) + " originally scheduled for" + spaceday_if_not_today(game,sayToday=True) + " is cancelled."
+		status = rank_name(game["away"]) + " vs. " + rank_name(game["home"]) + " originally scheduled for" + spaceday(game,sayToday=True) + " is cancelled."
 	
 	return status
 
@@ -144,7 +153,7 @@ def get(team):
 		return status(game)
 	elif (tkey in ncaaNickDict):
 		if (ncaaNickDict[tkey].__class__ == list):
-			return "For " + team + ", please choose " + joinOr(ncaaNickDict[tkey] + ".")
+			return "For " + team + ", please choose " + joinOr(ncaaNickDict[tkey]) + "."
 		else:
 			game = find_game(sb,ncaaNickDict[tkey])
 			if game:

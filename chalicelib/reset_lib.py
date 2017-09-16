@@ -12,8 +12,8 @@ def joinOr(li):
 	else:
 		commas = join(li[:-2],", ")
 		return commas + ", " + li[-2] + ", or " + li[-1]
-	
 
+# This dictionary is in some ways opinionated. Sorry, all non-Texas Aggies.
 ncaaNickDict = {'rebels': 'unlv', 
 	'warhawks': 'la.-monroe', 'louisiana-monroe': 'la.-monroe', 
 	'cougars': 'washington st.', 'wsu': 'washington st.', 'washington state': 'washington st.','wazzu':'washington st.',
@@ -65,7 +65,7 @@ ncaaNickDict = {'rebels': 'unlv',
 	'horned frogs': 'tcu', 
 	'rams': 'colorado state', 
 	'49ers': 'charlotte', 
-	'yellow jackets': 'georgia tech', 'jackets':'georgia tech',
+	'yellow jackets': 'georgia tech', 'jackets':'georgia tech', 'gt':'georgia tech',
 	'badgers': 'wisconsin', 
 	'buffaloes': 'colorado', 
 	'golden gophers': 'minnesota', 'gophers':'minnesota',
@@ -94,7 +94,7 @@ ncaaNickDict = {'rebels': 'unlv',
 	'crimson tide': 'alabama', 
 	'cyclones': 'iowa state', 
 	'ducks': 'oregon', 
-	'aggies': 'texas a&m', # sorry utah state.
+	'aggies': 'texas a&m',
 	'hoosiers': 'indiana', 
 	'warriors': 'hawaii', 
 	'scarlet knights': 'rutgers', 
@@ -111,7 +111,7 @@ ncaaNickDict = {'rebels': 'unlv',
 	'bruins': 'ucla', 
 	'falcons': 'bowling green', 
 	'minutemen': 'massachusetts', 'umass': 'massachusetts', 
-	'volunteers': 'tennessee', 'vols':'tennessee',
+	'volunteers': 'tennessee', 'vols':'tennessee', 'vawls': "tennessee", "ut":["Tennessee","Texas"],
 	'mean green': 'north texas'
 }
 
@@ -127,5 +127,6 @@ displayOverrides = {
 	'coastal caro.':'Coastal Carolina',
 	'ga. southern':'Georgia Southern',
 	'south florida':'USF',
-	'washington st.':'Washington State'
+	'washington st.':'Washington State',
+	'northern ill.':"Northern Illinois"
 }
