@@ -13,6 +13,16 @@ def joinOr(li):
 		commas = join(li[:-2],", ")
 		return commas + ", " + li[-2] + ", or " + li[-1]
 
+def sentenceCap(sen):
+	if sen.__class__ != str:
+		raise Exception
+	elif len(sen) == 0:
+		return sen
+	elif len(sen) == 1:
+		return sen.upper()
+	else:
+		return sen[0].upper() + sen[1:]
+
 # This dictionary is in some ways opinionated. Sorry, all non-Texas Aggies.
 ncaaNickDict = {'rebels': 'unlv', 
 	'warhawks': 'la.-monroe', 'louisiana-monroe': 'la.-monroe', "ulm":"la.-monroe",
