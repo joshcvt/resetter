@@ -2,7 +2,8 @@
 
 import urllib2, json, time
 from datetime import datetime, timedelta
-from reset_lib import ncaaNickDict, displayOverrides, joinOr, sentenceCap, iaa, validFbSet
+from reset_lib import joinOr, sentenceCap
+from ncaa_lib import ncaaNickDict, displayOverrides, iaa, validFbSet
 
 SCOREBOARD_URL = "http://data.ncaa.com/jsonp/scoreboard/football/fbs/2017/WHAT_WEEK/scoreboard.html?callback=ncaaScoreboard.dispScoreboard"
 
