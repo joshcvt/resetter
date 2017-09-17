@@ -130,18 +130,24 @@ def status(game):
 		
 	elif game["gameState"] == "live":
 		
-		status = game_loc(game) + ", " + scoreline(game) 
+		status = scoreline(game) 
 		if game["currentPeriod"].strip() == "Halftime":
-			status += " at halftime."
+			status += " at halftime "
+		elif game["currentPeriod"].startswith("End"):
+			status += ", " + game["currentPeriod"].strip().lower() + " quarter "
 		else:
-			status += ", " + game["timeclock"].strip() + " to go in the " + game["currentPeriod"].strip() + ". "
+			status += ", " + game["timeclock"].strip() + " to go in the " + game["currentPeriod"].strip() + " quarter "
+		status += game_loc(game) + "."
 		
 	elif game["gameState"] == "pre":
 		
-		status = game_loc(game) + ", " + rank_name(game["away"]) + " plays " + rank_name(game["home"]) + " at " + game["startTime"].strip() + spaceday(game) + "."
+		status = rank_name(game["away"]) + " plays " + rank_name(game["home"]) + " at " + game["startTime"].strip() + spaceday(game) + " " + game_loc(game) + "."
 	
-	elif game["gameState"] == "cancelled":
-		status = rank_name(game["away"]) + " vs. " + rank_name(game["home"]) + " originally scheduled for" + spaceday(game,sayToday=True) + " is cancelled."
+	elif game["gameState"] in ("cancelled","postponed"):
+		status = rank_name(game["away"]) + " vs. " + rank_name(game["home"]) + " originally scheduled for" + spaceday(game,sayToday=True) + " " + game_loc(game) + " is " + game["gameState"] + "."
+	
+	else:
+		status = "HELP! I don't understand game state '" + game["gameState"] + "' for " + rank_name(game["away"]) + " vs. " + rank_name(game["home"]) + "."
 	
 	return sentenceCap(status)
 

@@ -13,10 +13,11 @@ print "#goacc:"
 print str(get("Wake Forest",True))
 print str(get("VT",True))
 print str(get("UVa",True))
+print str(get("FSU",True))
 
 print "SEC:"
 print str(get("Tennessee",True))
-print str(get("Mizzou",True))
+print str(get("Ole Miss",True))
 print str(get("LSU",True))
 
 print "Aloha:"

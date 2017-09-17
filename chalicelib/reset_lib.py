@@ -24,7 +24,7 @@ def sentenceCap(sen):
 		return sen[0].upper() + sen[1:]
 
 # This dictionary is in some ways opinionated. Sorry, all non-Texas Aggies.
-ncaaNickDict = {'rebels': 'unlv', 
+ncaaNickDict = {'rebels': ['Ole Miss','UNLV'], "runnin' rebels":"unlv","ole miss":"mississippi", 
 	'warhawks': 'la.-monroe', 'louisiana-monroe': 'la.-monroe', "ulm":"la.-monroe",
 	'cougars': 'washington st.', 'wsu': 'washington st.', 'washington state': 'washington st.','wazzu':'washington st.',
 	'wolverines': 'michigan', 
@@ -84,9 +84,9 @@ ncaaNickDict = {'rebels': 'unlv',
 	'blue devils': 'duke', 
 	'bears': 'baylor', 
 	'eagles': 'ga. southern', 'georgia southern':'ga. southern',
-	'seminoles': 'florida state', 'noles': 'florida state',
+	'seminoles': 'florida state', 'noles': 'florida state', 'fsu':'florida state',
 	'tigers': ['Missouri', 'Clemson', 'Auburn', 'LSU', "Memphis","Towson"], 'mizzou':'missouri',
-	'bulldogs': ['Mississippi State','Georgia'], 'mississippi state':'mississippi st.', 'dawgs':'georgia', 
+	'bulldogs': ['Mississippi State','Georgia'], 'mississippi state':'mississippi st.', 'clanga':'mississippi st.','dawgs':'georgia', 
 	'wolfpack': 'nc state', 'north carolina state': 'nc state', 'n.c. state': 'nc state', 
 	'mountaineers': 'west virginia', 'eers': 'west virginia', 'wvu': 'west virginia',
 	'hurricanes': 'miami (fla.)', 'canes': 'miami (fla.)',
