@@ -152,7 +152,7 @@ def status(game):
 	return sentenceCap(status)
 
 
-def get(team,setLocal=False):
+def get(team,forceReload=False):
 	
 	global __MOD
 	
@@ -160,7 +160,7 @@ def get(team,setLocal=False):
 	if (team in iaa) or (team in ncaaNickDict and ncaaNickDict[team] in iaa):
 		sb = get_scoreboard(iaa=True)
 	else:
-		if ("sb" not in __MOD) or (("sbdt" in __MOD) and (datetime.utcnow() - __MOD["sbdt"] > timedelta(minutes=1))):
+		if forceReload or ("sb" not in __MOD) or (("sbdt" in __MOD) and (datetime.utcnow() - __MOD["sbdt"] > timedelta(minutes=1))):
 			__MOD["sb"] = get_scoreboard()
 			__MOD["sbdt"] = datetime.utcnow()
 		
