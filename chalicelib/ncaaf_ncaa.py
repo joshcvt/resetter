@@ -2,7 +2,7 @@
 
 import urllib2, json, time
 from datetime import datetime, timedelta
-from reset_lib import ncaaNickDict, displayOverrides, joinOr, sentenceCap, iaa
+from reset_lib import ncaaNickDict, displayOverrides, joinOr, sentenceCap, iaa, validFbSet
 
 SCOREBOARD_URL = "http://data.ncaa.com/jsonp/scoreboard/football/fbs/2017/WHAT_WEEK/scoreboard.html?callback=ncaaScoreboard.dispScoreboard"
 
@@ -162,6 +162,7 @@ def get(team,setLocal=False):
 	
 	game = find_game(sb,team)
 	tkey = team.lower().strip()
+	
 	if game:
 		return status(game)
 	elif (tkey in ncaaNickDict):
@@ -171,8 +172,10 @@ def get(team,setLocal=False):
 			game = find_game(sb,ncaaNickDict[tkey])
 			if game:
 				return status(game)
-			else:
-				return None
-	else:
-		return None
-		
+	
+	if tkey in validFbSet:
+		return "No game this week for " + team + "."
+	
+	#fallthru
+	return None
+	

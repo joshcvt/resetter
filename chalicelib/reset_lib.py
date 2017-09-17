@@ -153,3 +153,13 @@ displayOverrides = {
 	'louisiana':"Louisiana-Lafayette",
 	"la.-monroe":'Louisiana-Monroe'
 }
+
+def validDabs():
+	dabs = []
+	for i in ncaaNickDict:
+		if ncaaNickDict[i].__class__ == list:
+			for j in ncaaNickDict[i]:
+				dabs.append(j.lower())
+	return dabs
+	
+validFbSet = list(ncaaNickDict.keys()) + list(ncaaNickDict.values()) + list(iaa) + validDabs()
