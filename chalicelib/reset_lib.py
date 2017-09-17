@@ -151,7 +151,9 @@ displayOverrides = {
 	'washington st.':'Washington State',
 	'northern ill.':"Northern Illinois",
 	'louisiana':"Louisiana-Lafayette",
-	"la.-monroe":'Louisiana-Monroe'
+	"la.-monroe":'Louisiana-Monroe',
+	"mississippi":"Ole Miss",
+	"california":"Cal"
 }
 
 def validDabs():
