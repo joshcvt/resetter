@@ -159,12 +159,13 @@ def get(team,setLocal=False):
 	#sb = get_scoreboard()
 	if (team in iaa) or (team in ncaaNickDict and ncaaNickDict[team] in iaa):
 		sb = get_scoreboard(iaa=True)
-	elif setLocal:
-		if "sb" not in __MOD:
-			__MOD["sb"] = get_scoreboard()
-		sb = __MOD["sb"]
 	else:
-		sb = get_scoreboard()
+		if ("sb" not in __MOD) or (("sbdt" in __MOD) and (datetime.utcnow() - __MOD["sbdt"] > timedelta(minutes=1))):
+			__MOD["sb"] = get_scoreboard()
+			__MOD["sbdt"] = datetime.utcnow()
+		
+		sb = __MOD["sb"]
+	
 	
 	game = find_game(sb,team)
 	tkey = team.lower().strip()
