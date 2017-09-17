@@ -48,7 +48,7 @@ ncaaNickDict = {'rebels': ['Ole Miss','UNLV'], "runnin' rebels":"unlv","ole miss
 	'cornhuskers': 'nebraska', 
 	'wildcats': ['Northwestern','Kentucky','Villanova','New Hampshire'], 
 	'rockets': 'toledo', 
-	'nittany lions': 'penn st.', 'penn state':'penn st.', "lions":"penn st.",
+	'nittany lions': 'penn st.', 'penn state':'penn st.', "lions":"penn st.","psu":"penn st.",
 	'demon deacons': 'wake forest', 
 	'gamecocks': 'south carolina', 
 	'red raiders': 'texas tech', 
