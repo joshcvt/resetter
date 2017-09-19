@@ -200,7 +200,7 @@ def launch(team,fluidVerbose=False,rewind=False,ffwd=False):
 	gns = findGameNodes(masterScoreboardTree,vtoc[team])
 	
 	if len(gns) == 0:
-		return ["No game today for" + team + "."]
+		return ["No game today for " + team + "."]
 	
 	rv = []
 	for gn in gns:
