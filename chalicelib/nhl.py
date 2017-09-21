@@ -94,7 +94,11 @@ def game_loc(game):
 
 	try:
 		if game["venue"]["name"].strip() == game["teams"]["home"]["team"]["venue"]["name"].strip():
-			return "in " + game["teams"]["home"]["team"]["venue"]["city"].strip()
+			# they accent it in the team name rendering, so the city name not being looks dumb
+			if game["teams"]["home"]["team"]["venue"]["city"].strip() == "Montreal":
+				return u"in Montréal"	
+			else:
+				return "in " + game["teams"]["home"]["team"]["venue"]["city"].strip()
 	except:
 		pass
 	
@@ -113,7 +117,16 @@ def scoreline(game):
 
 def local_game_time(game):
 
-	return ""
+	homezone = game["teams"]["home"]["team"]["venue"]["timeZone"]
+	# tz is name, offset is hrs off
+	gameutc = datetime.strptime(game['gameDate'],'%Y-%m-%dT%H:%M:%SZ')
+	gamelocal = gameutc + timedelta(hours=(homezone["offset"]))
+	
+	printtime = gamelocal.strftime("%I:%M %p") 
+	if printtime[0] == '0':
+		printtime = printtime[1:]
+	return printtime + " " + homezone["tz"]
+	
 
 def game_time_set(game):
 
@@ -155,8 +168,14 @@ def phrase_game(game):
 	status = int(game["status"]["statusCode"])
 	
 	if status in (1,2):		# scheduled, pregame
-		return game["teams"]["away"]["team"]["teamName"] + " plays " + game["teams"]["home"]["team"]["teamName"] + " " + game_loc(game) + " at " + local_game_time(game) + "."
-	
+		loc = game_loc(game)
+		if loc.startswith("at"):	# unusual venue
+			ret = game["teams"]["away"]["team"]["shortName"] + " plays " + game["teams"]["home"]["team"]["shortName"] + " " + game_loc + " at " + local_game_time(game) + "."
+		else:
+			ret = game["teams"]["away"]["team"]["shortName"] + " visits " + game["teams"]["home"]["team"]["shortName"] + " at " + local_game_time(game) + "."
+		
+		return ret
+		
 	elif status in (3,4):	# in progress, in progress - critical
 		base = game_loc(game) + ", " + scoreline(game)
 		timeset = game_time_set(game)
@@ -181,21 +200,33 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
 	
 	tkey = team.lower().strip()
 	
-	if not (tkey in vtoc):
+	ret = ""
+	
+	if tkey == "scoreboard":
+		try:
+			game = sb["dates"][0]["games"]
+		except:		# keyerror or index error means scoreboard is blown out
+			print "full scoreboard get blew out\n" + str(e)	# for logging
+			game = []
+	
+	elif not (tkey in vtoc):
 		return None
 	
-	game = get_game(sb,vtoc[tkey])
-	
-	ret = ""
+	else:
+		game = get_game(sb,vtoc[tkey])
 	
 	if not game:
 		ret = "No game today for the " + vtoc[tkey].capitalize() + "."
-	elif game.__class__ == list:	# basically for preseason split-squad
-		ret = ""
-		for g in game:
-			ret += sentenceCap(phrase_game(g)) + "\n"
-		if len(ret) > 0:
-			ret = ret[:-1]
+	
+	elif game.__class__ == list:	# full scoreboard or preseason split-squad
+		if len(game) == 0:
+			ret = "No games today."
+		else:
+			ret = ""
+			for g in game:
+				ret += sentenceCap(phrase_game(g)) + "\n"
+			if len(ret) > 0:
+				ret = ret[:-1]
 	else:
 		ret = sentenceCap(phrase_game(game))
 		
