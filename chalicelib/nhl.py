@@ -5,7 +5,7 @@ import urllib2, json, time
 from datetime import datetime, timedelta
 from reset_lib import joinOr, sentenceCap
 
-intRolloverUtcTime = 1200
+intRolloverUtcTime = 1000
 
 SCOREBOARD_URL_JSON = "https://statsapi.web.nhl.com/api/v1/schedule?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&expand=schedule.teams,schedule.linescore,schedule.broadcasts.all,schedule.ticket,schedule.game.content.media.epg,schedule.radioBroadcasts,schedule.decisions,schedule.scoringplays,schedule.game.content.highlights.scoreboard,team.leaders,schedule.game.seriesSummary,seriesSummary.series&leaderCategories=points,goals,assists&leaderGameTypes=R&site=en_nhl&teamId=&gameType=&timecode="
 
@@ -94,16 +94,20 @@ def game_loc(game):
 
 	try:
 		if game["venue"]["name"].strip() == game["teams"]["home"]["team"]["venue"]["name"].strip():
-			# they accent it in the team name rendering, so the city name not being looks dumb
-			if game["teams"]["home"]["team"]["venue"]["city"].strip() == "Montreal":
-				return u"in Montréal"	
-			else:
-				return "in " + game["teams"]["home"]["team"]["venue"]["city"].strip()
+			return "in " + game["teams"]["home"]["team"]["venue"]["city"].strip()
 	except:
 		pass
 	
 	return "at " + game["venue"]["name"].strip()
 
+def teamDisplayName(team):
+	"""we have this because Montreal venue/Montréal teamloc and St. Louis venue/St Louis shortname looks dumb."""
+	overrides = {u'Montréal':'Montreal','St Louis':'St. Louis'}
+	sname = team["team"]["shortName"]
+	if sname in overrides:
+		return overrides[sname]
+	else:
+		return sname
 
 def scoreline(game):
 	
@@ -113,7 +117,10 @@ def scoreline(game):
 		leader = game["teams"]["home"]
 		trailer = game["teams"]["away"]
 	# by default list away team first in a tie, because this is North American
-	return leader["team"]["shortName"] + " " + str(leader["score"]) + ", " + trailer["team"]["shortName"] + " " + str(trailer["score"])
+	return teamDisplayName(leader) + " " + str(leader["score"]) + ", " + teamDisplayName(trailer) + " " + str(trailer["score"])
+
+class LateStartException(Exception):
+	pass
 
 def local_game_time(game):
 
@@ -125,6 +132,8 @@ def local_game_time(game):
 	printtime = gamelocal.strftime("%I:%M %p") 
 	if printtime[0] == '0':
 		printtime = printtime[1:]
+	if gameutc < datetime.utcnow():
+		raise LateStartException
 	return printtime + " " + homezone["tz"]
 	
 
@@ -137,16 +146,25 @@ def game_time_set(game):
 	if trem == '20:00':
 		return "start of the " + pd
 	elif trem == 'END':
-		if game["linescore"]["intermissionInfo"]["inIntermission"]:
+		
+		if pd == "3rd":
+			return "at the end of regulation"
+		elif game["linescore"]["intermissionInfo"]["inIntermission"]:
 			if pd in ("1st","2nd"):
 				return "at the " + pd + " intermission"
-			elif pd == "3rd":
-				return "at the end of regulation"
 			else:
-				print "oh hell, it's overtime/so"
+				print "intermission but it's overtime/so, LOOK AT THIS"
 				print json.dumps(game,sort_keys=True, indent=4, separators=(',', ': '))
+				return "at the " + pd + " intermission"
 		else:
-			return "end of the " + pd
+			if pd == "OT":
+				# you might catch a situation where the game's over, but they don't know it yet
+				if game["teams"]["home"]["score"] != game["teams"]["away"]["score"]:
+					return "final in overtime"
+				else:
+					return "after overtime"
+			else:
+				return "end of the " + pd
 	else:
 		if pd != "OT":
 			pd = "the " + pd
@@ -170,9 +188,18 @@ def phrase_game(game):
 	if status in (1,2):		# scheduled, pregame
 		loc = game_loc(game)
 		if loc.startswith("at"):	# unusual venue
-			ret = game["teams"]["away"]["team"]["shortName"] + " plays " + game["teams"]["home"]["team"]["shortName"] + " " + game_loc + " at " + local_game_time(game) + "."
+			ret = teamDisplayName(game["teams"]["away"]) + " plays " + teamDisplayName(game["teams"]["home"]) + " " + game_loc(game)
 		else:
-			ret = game["teams"]["away"]["team"]["shortName"] + " visits " + game["teams"]["home"]["team"]["shortName"] + " at " + local_game_time(game) + "."
+			ret = teamDisplayName(game["teams"]["away"]) + " visits " + teamDisplayName(game["teams"]["home"])
+		
+		try:
+			gametime = local_game_time(game)
+			ret += " at " + gametime + "."
+		except LateStartException:
+			# rephrase
+			ret = ret.replace("plays","vs.")
+			ret = ret.replace("visits","at")
+			ret += " will be underway momentarily."
 		
 		return ret
 		
