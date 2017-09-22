@@ -20,4 +20,4 @@ print str(get("canes",ffwd=True))   # this tests the lookup table
 print str(get("canadiens",ffwd=True)) + "\n"
 
 print "bad team:"
-print str(launch("asdfas"))
+print str(get("asdfas"))

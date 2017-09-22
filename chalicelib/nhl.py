@@ -57,8 +57,6 @@ def get_scoreboard(file=None,fluidVerbose=False,rewind=False,ffwd=False):
 		if ffwd:
 			localRollover -= 2400
 	
-		#
-
 		todayDT = datetime.utcnow() - timedelta(minutes=((localRollover/100)*60+(localRollover%100)))
 		todayScoreboardUrl = SCOREBOARD_URL_JSON.replace("YYYY-MM-DD",todayDT.strftime("%Y-%m-%d"))
 	
@@ -188,9 +186,13 @@ def phrase_game(game):
 	if status in (1,2):		# scheduled, pregame
 		loc = game_loc(game)
 		if loc.startswith("at"):	# unusual venue
-			ret = teamDisplayName(game["teams"]["away"]) + " plays " + teamDisplayName(game["teams"]["home"]) + " " + game_loc(game)
+			ret = teamDisplayName(game["teams"]["away"])
+			ret += " play " if (ret.startswith("NY") and ret.endswith("s")) else " plays "
+			ret += teamDisplayName(game["teams"]["home"]) + " " + game_loc(game)
 		else:
-			ret = teamDisplayName(game["teams"]["away"]) + " visits " + teamDisplayName(game["teams"]["home"])
+			ret = teamDisplayName(game["teams"]["away"])
+			ret += " visit " if (ret.startswith("NY") and ret.endswith("s")) else " visits "
+			ret += teamDisplayName(game["teams"]["home"])
 		
 		try:
 			gametime = local_game_time(game)
@@ -221,8 +223,7 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
 
 	vtoc = buildVarsToCode()
 	#print vtoc
-	
-	sb = get_scoreboard(fluidVerbose,rewind,ffwd)
+	sb = get_scoreboard(fluidVerbose=fluidVerbose,rewind=rewind,ffwd=ffwd)
 	#print json.dumps(sb, sort_keys=True, indent=4, separators=(',', ': '))
 	
 	tkey = team.lower().strip()
