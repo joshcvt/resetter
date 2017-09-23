@@ -186,6 +186,15 @@ def final_qualifier(game):
 		return " in " + game["linescore"]["currentPeriodOrdinal"]
 	else:
 		return ""
+		
+def fix_for_delay(ret):
+
+	ret = ret.replace("plays","vs.")
+	ret = ret.replace("play","vs.")
+	ret = ret.replace("visits","at")
+	ret = ret.replace("visit","at")
+	return ret				
+	
 
 def phrase_game(game):
 
@@ -206,17 +215,10 @@ def phrase_game(game):
 			gametime = local_game_time(game)
 			ret += " at " + gametime + "."
 		except ShortDelayException:
-			# rephrase
-			ret = ret.replace("plays","vs.")
-			ret = ret.replace("play","vs.")
-			ret = ret.replace("visits","at")
-			ret = ret.replace("visit","at")
+			ret = fix_for_delay(ret)
 			ret += " will be underway momentarily."
 		except LateStartException as lse:
-			ret = ret.replace("plays","vs.")
-			ret = ret.replace("play","vs.")
-			ret = ret.replace("visits","at")
-			ret = ret.replace("visit","at")
+			ret = fix_for_delay(ret)
 			ret += ", scheduled for " + str(lse) + ", is delayed (or the league web site has no data)."
 		
 		return ret
