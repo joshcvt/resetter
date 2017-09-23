@@ -117,6 +117,9 @@ def scoreline(game):
 	# by default list away team first in a tie, because this is North American
 	return teamDisplayName(leader) + " " + str(leader["score"]) + ", " + teamDisplayName(trailer) + " " + str(trailer["score"])
 
+class ShortDelayException(Exception):
+	pass
+
 class LateStartException(Exception):
 	pass
 
@@ -126,13 +129,18 @@ def local_game_time(game):
 	# tz is name, offset is hrs off
 	gameutc = datetime.strptime(game['gameDate'],'%Y-%m-%dT%H:%M:%SZ')
 	gamelocal = gameutc + timedelta(hours=(homezone["offset"]))
+	startdelay = datetime.utcnow() - gameutc
 	
 	printtime = gamelocal.strftime("%I:%M %p") 
 	if printtime[0] == '0':
 		printtime = printtime[1:]
-	if gameutc < datetime.utcnow():
-		raise LateStartException
-	return printtime + " " + homezone["tz"]
+	
+	if startdelay > timedelta(minutes=15):
+		raise LateStartException(printtime + " " + homezone["tz"])
+	elif startdelay > timedelta(minutes=0):
+		raise ShortDelayException
+	else:
+		return printtime + " " + homezone["tz"]
 	
 
 def game_time_set(game):
@@ -197,11 +205,19 @@ def phrase_game(game):
 		try:
 			gametime = local_game_time(game)
 			ret += " at " + gametime + "."
-		except LateStartException:
+		except ShortDelayException:
 			# rephrase
 			ret = ret.replace("plays","vs.")
+			ret = ret.replace("play","vs.")
 			ret = ret.replace("visits","at")
+			ret = ret.replace("visit","at")
 			ret += " will be underway momentarily."
+		except LateStartException as lse:
+			ret = ret.replace("plays","vs.")
+			ret = ret.replace("play","vs.")
+			ret = ret.replace("visits","at")
+			ret = ret.replace("visit","at")
+			ret += ", scheduled for " + str(lse) + ", is delayed (or the league web site has no data)."
 		
 		return ret
 		
