@@ -127,7 +127,10 @@ def status(game):
 		return None
 	
 	elif game["gameState"] == "final":
-		status = "Final " + game_loc(game) + ", " + scoreline(game) + "."
+		status = "Final " + game_loc(game) + ", " + scoreline(game) 
+		if game["scoreBreakdown"][-1].strip() not in ("1","2","3","4"):
+			status += " in " + game["scoreBreakdown"][-1].strip()
+		status += "."
 		
 	elif game["gameState"] == "live":
 		
@@ -161,12 +164,16 @@ def get(team,forceReload=False):
 	
 	#sb = get_scoreboard()
 	if (team in iaa) or (team in ncaaNickDict and ncaaNickDict[team] in iaa):
+		print "loading I-AA scoreboard from NCAA"
 		sb = get_scoreboard(iaa=True)
 	else:
 		if forceReload or ("sb" not in __MOD) or (("sbdt" in __MOD) and (datetime.utcnow() - __MOD["sbdt"] > timedelta(minutes=1))):
+			print "loading scoreboard from NCAA"
 			__MOD["sb"] = get_scoreboard()
 			__MOD["sbdt"] = datetime.utcnow()
-		
+		else:
+			print "using cached scoreboard"
+			
 		sb = __MOD["sb"]
 	
 	
@@ -184,7 +191,10 @@ def get(team,forceReload=False):
 				return status(game)
 	
 	if tkey in validFbSet:
-		return "No game this week for " + team + "."
+		ret = "No game this week for " + team
+		if ret[-1] != ".":
+			ret += "."
+		return ret
 	
 	#fallthru
 	return None

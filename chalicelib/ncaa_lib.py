@@ -3,7 +3,7 @@
 
 # This dictionary is in some ways opinionated. Sorry, all non-Texas Aggies.
 ncaaNickDict = {'rebels': ['Ole Miss','UNLV'], "runnin' rebels":"unlv","ole miss":"mississippi", 
-	'warhawks': 'la.-monroe', 'louisiana-monroe': 'la.-monroe', "ulm":"la.-monroe",
+	'warhawks': 'la.-monroe', 'louisiana-monroe': 'la.-monroe', "ulm":"la.-monroe", "funroe":"la.-monroe",
 	'cougars': 'washington st.', 'wsu': 'washington st.', 'washington state': 'washington st.','wazzu':'washington st.',
 	'wolverines': 'michigan', 
 	'panthers': 'pittsburgh', 'pitt': 'pittsburgh',
