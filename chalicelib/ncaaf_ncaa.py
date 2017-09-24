@@ -136,6 +136,8 @@ def status(game):
 			status += " at halftime "
 		elif game["currentPeriod"].startswith("End"):
 			status += ", " + game["currentPeriod"].strip().lower() + " quarter "
+		elif game["currentPeriod"].strip().endswith("OT"):
+			status += " in " + game["currentPeriod"].strip() + " "
 		else:
 			status += ", " + game["timeclock"].strip() + " to go in the " + game["currentPeriod"].strip() + " quarter "
 		status += game_loc(game) + "."
