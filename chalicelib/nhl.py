@@ -7,6 +7,8 @@ from reset_lib import joinOr, sentenceCap
 
 intRolloverUtcTime = 1000
 
+preferredTZ = ({"offset":-5,"tz":"EST"},{"offset":-4,"tz":"EDT"})
+
 SCOREBOARD_URL_JSON = "https://statsapi.web.nhl.com/api/v1/schedule?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&expand=schedule.teams,schedule.linescore,schedule.broadcasts.all,schedule.ticket,schedule.game.content.media.epg,schedule.radioBroadcasts,schedule.decisions,schedule.scoringplays,schedule.game.content.highlights.scoreboard,team.leaders,schedule.game.seriesSummary,seriesSummary.series&leaderCategories=points,goals,assists&leaderGameTypes=R&site=en_nhl&teamId=&gameType=&timecode="
 
 validTeams = ("rangers","islanders","capitals","flyers","penguins","blue jackets","hurricanes","devils",
@@ -28,6 +30,35 @@ derefs = { "rangers":["nyr","blueshirts"],"islanders":["isles","nyi"],"capitals"
 	"sharks":['sj','san jose',u'san josé'],"kings":['la','lak'],"ducks":['ana','anaheim','mighty ducks'],
 	"coyotes":['phx','ari','arizona','yotes'],"golden knights":['vegas','lv','knights']
 }
+
+__MOD = {}
+
+
+class TzFailedUseLocalException(Exception):
+	pass
+
+def todayIsDst(sb):
+	# Using US margins, and in marginal weeks check the scoreboard to see if any games 
+	# are being played in a DT zone. it's sloppy, but the only time this should get tricked 
+	# is if the only game of the day is in Arizona, which is unlikely.
+	# the proper way to do this is to package tzinfo in, of course, but I'd rather save
+	# the resources in a non-mission-critical setting.
+	
+	today = datetime.utcnow() + timedelta(hours=preferredTZ[0]["offset"])
+	if (today.month in (12,1,2)) or (today.month == 3 and today.day < 8) or (today.month == 11 and today.day > 7):
+		return False
+	elif (today.month in (4,5,6,7,8,9,10)) or (today.month == 3 and today.day > 14):
+		return True
+	
+	try:
+		for game in sb["dates"][0]["games"]:
+			zone = game["teams"]["home"]["team"]["venue"]["timeZone"]
+			if zone["tz"][-2] == "D":
+				return True
+	except:
+		raise TzFailedUseLocalException
+	
+	return False
 
 def buildVarsToCode():
 	vtoc = {}
@@ -124,23 +155,33 @@ class LateStartException(Exception):
 	pass
 
 def local_game_time(game):
-
-	homezone = game["teams"]["home"]["team"]["venue"]["timeZone"]
-	# tz is name, offset is hrs off
+	
+	global __MOD	
+			
 	gameutc = datetime.strptime(game['gameDate'],'%Y-%m-%dT%H:%M:%SZ')
-	gamelocal = gameutc + timedelta(hours=(homezone["offset"]))
 	startdelay = datetime.utcnow() - gameutc
 	
-	printtime = gamelocal.strftime("%I:%M %p") 
+	if (__MOD["dst"] == "local"):
+		# tz is name, offset is hrs off
+		homezone = game["teams"]["home"]["team"]["venue"]["timeZone"]
+	else:
+		if __MOD["dst"]:
+			idx = 1
+		else:
+			idx = 0
+		homezone = preferredTZ[idx]		
+	
+	gamelocal = gameutc + timedelta(hours=(homezone["offset"]))
+	printtime = gamelocal.strftime("%I:%M %p") + " " + homezone["tz"]	
+
 	if printtime[0] == '0':
 		printtime = printtime[1:]
-	
 	if startdelay > timedelta(minutes=15):
-		raise LateStartException(printtime + " " + homezone["tz"])
+		raise LateStartException(printtime)
 	elif startdelay > timedelta(minutes=0):
 		raise ShortDelayException
 	else:
-		return printtime + " " + homezone["tz"]
+		return printtime 
 	
 
 def game_time_set(game):
@@ -182,7 +223,10 @@ def final_qualifier(game):
 	
 	if game["linescore"]["currentPeriodOrdinal"] == "OT":
 		return " in overtime"
+	elif game["linescore"]["currentPeriodOrdinal"] == "SO":
+		return " in a shootout"
 	elif game["linescore"]["currentPeriod"] > 3:
+		print "this is weird: period is " + game["linescore"]["currentPeriodOrdinal"]
 		return " in " + game["linescore"]["currentPeriodOrdinal"]
 	else:
 		return ""
@@ -239,10 +283,16 @@ def phrase_game(game):
 		
 def get(team,fluidVerbose=False,rewind=False,ffwd=False):
 
+	global __MOD
+
 	vtoc = buildVarsToCode()
 	#print vtoc
 	sb = get_scoreboard(fluidVerbose=fluidVerbose,rewind=rewind,ffwd=ffwd)
 	#print json.dumps(sb, sort_keys=True, indent=4, separators=(',', ': '))
+	try:
+		__MOD["dst"] = todayIsDst(sb)
+	except TzFailedUseLocalException:
+		__MOD["dst"] = "local"
 	
 	tkey = team.lower().strip()
 	
