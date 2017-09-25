@@ -185,17 +185,17 @@ def launch(team,fluidVerbose=False,rewind=False,ffwd=False):
 	
 	vtoc = buildVarsToCode()
 
+	if team.lower() in dabList:
+		return ["Did you mean " + join(dabList[team]," or ") + "?"]
+	elif team.lower() not in vtoc:
+		return None
+	
 	todayDT = datetime.now() - timedelta(minutes=((localRollover/100)*60+(localRollover%100)))
 	todayStr = todayDT.strftime("%Y-%m-%d")
 
 	#masterScoreboardUrl = re.sub("LEAGUEBLOCK","mlb",leagueAgnosticMasterScoreboardUrl)
 	masterScoreboardUrl = leagueAgnosticMasterScoreboardUrl.replace("LEAGUEBLOCK","mlb")
 	masterScoreboardTree = loadMasterScoreboard(masterScoreboardUrl,todayDT)
-	
-	if team.lower() in dabList:
-		return ["Did you mean " + join(dabList[team]," or ") + "?"]
-	elif team.lower() not in vtoc:
-		return None
 	
 	gns = findGameNodes(masterScoreboardTree,vtoc[team])
 	
