@@ -161,11 +161,15 @@ def status(game):
 def get(team,forceReload=False):
 	
 	global __MOD
+
+	tkey = team.lower().strip()
 	
 	#sb = get_scoreboard()
-	if (team in iaa) or (team in ncaaNickDict and ncaaNickDict[team] in iaa):
+	if (tkey in iaa) or (tkey in ncaaNickDict and ncaaNickDict[tkey] in iaa):
 		print "loading I-AA scoreboard from NCAA"
 		sb = get_scoreboard(iaa=True)
+	elif tkey not in validFbSet:
+		return None
 	else:
 		if forceReload or ("sb" not in __MOD) or (("sbdt" in __MOD) and (datetime.utcnow() - __MOD["sbdt"] > timedelta(minutes=1))):
 			print "loading scoreboard from NCAA"
@@ -178,7 +182,6 @@ def get(team,forceReload=False):
 	
 	
 	game = find_game(sb,team)
-	tkey = team.lower().strip()
 	
 	if game:
 		return status(game)
@@ -190,12 +193,10 @@ def get(team,forceReload=False):
 			if game:
 				return status(game)
 	
-	if tkey in validFbSet:
-		ret = "No game this week for " + team
-		if ret[-1] != ".":
-			ret += "."
-		return ret
-	
-	#fallthru
-	return None
+	# fallthru
+	ret = "No game this week for " + team
+	if ret[-1] != ".":
+		ret += "."
+	return ret
+
 	
