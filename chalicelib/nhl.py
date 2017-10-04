@@ -17,10 +17,10 @@ validTeams = ("rangers","islanders","capitals","flyers","penguins","blue jackets
 	"oilers","flames","canucks","sharks","kings","ducks","coyotes","golden knights"
 )
 
-derefs = { "rangers":["nyr","blueshirts"],"islanders":["isles","nyi"],"capitals":["caps","nocups","was","washington","dc"],
+derefs = { "rangers":["nyr","blueshirts"],"islanders":["isles","nyi"],"capitals":["caps","nocups","no cups","was","washington","dc"],
 	"flyers":["philly","phl"],"penguins":["pens","pittsburgh","pit","pgh"],"blue jackets":["bluejackets","lumbus","cbj","bjs","bj's"],
-	"hurricanes":["carolina","canes"],"devils":["nj","njd","jersey","devs","new jersey"],
-	"red wings":["wings","det","detroit"],"sabres":["buffalo"],"maple leafs":["leafs","buds","toronto"],
+	"hurricanes":["carolina","canes","car"],"devils":["nj","njd","jersey","devs","new jersey"],
+	"red wings":["wings","det","detroit"],"sabres":["buffalo","buf"],"maple leafs":["leafs","buds","toronto","tor"],
 	"senators":["sens","ottawa"],"canadiens":["habs","montreal",u'montréal'],"bruins":["b's","bs"],
 	"panthers":["florida",'cats'],"lightning":["bolts","tb","tampa","tampa bay"],
 	"predators":["preds","nashville"],"blackhawks":['chi','hawks'],"blues":['stl'],"wild":['min'],
@@ -28,7 +28,7 @@ derefs = { "rangers":["nyr","blueshirts"],"islanders":["isles","nyi"],"capitals"
 	"avalanche":['avs','col','colorado'],
 	"oilers":['edm','oil'],"flames":['cgy','calgary'],"canucks":['nucks','van','vancouver'],
 	"sharks":['sj','san jose',u'san josé'],"kings":['la','lak'],"ducks":['ana','anaheim','mighty ducks'],
-	"coyotes":['phx','ari','arizona','yotes'],"golden knights":['vegas','lv','knights']
+	"coyotes":['phx','ari','arizona','yotes'],"golden knights":['vegas','lv','knights',"vgk"]
 }
 
 __MOD = {}
@@ -113,8 +113,10 @@ def get_game(sb,nickname):
 					g = [g, game]
 				else:
 					g.append(game)
+	except IndexError:
+		pass	# no games today
 	except Exception as e:
-		print e
+		print "game get blew out on something not IndexError: " + str(e)
 	
 	return g
 		
@@ -301,8 +303,10 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
 	if tkey == "scoreboard":
 		try:
 			game = sb["dates"][0]["games"]
-		except:		# keyerror or index error means scoreboard is blown out
-			print "full scoreboard get blew out\n" + str(e)	# for logging
+		except IndexError:
+			game = []
+		except Exception as e:		# keyerror or index error means scoreboard is blown out
+			print "full scoreboard get blew out, not IndexError\n" + str(e)	# for logging
 			game = []
 	
 	elif not (tkey in vtoc):
@@ -311,18 +315,18 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
 	else:
 		game = get_game(sb,vtoc[tkey])
 	
-	if not game:
-		ret = "No game today for the " + vtoc[tkey].capitalize() + "."
+	if not game:	# valid for game = [] as well
+		if game.__class__ == list:
+			ret = "No games today."
+		else:	
+			ret = "No game today for the " + vtoc[tkey].capitalize() + "."
 	
 	elif game.__class__ == list:	# full scoreboard or preseason split-squad
-		if len(game) == 0:
-			ret = "No games today."
-		else:
-			ret = ""
-			for g in game:
-				ret += sentenceCap(phrase_game(g)) + "\n"
-			if len(ret) > 0:
-				ret = ret[:-1]
+		ret = ""
+		for g in game:
+			ret += sentenceCap(phrase_game(g)) + "\n"
+		if len(ret) > 0:
+			ret = ret[:-1]
 	else:
 		ret = sentenceCap(phrase_game(game))
 		
