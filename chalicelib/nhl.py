@@ -19,12 +19,12 @@ validTeams = ("rangers","islanders","capitals","flyers","penguins","blue jackets
 
 derefs = { "rangers":["nyr","blueshirts"],"islanders":["isles","nyi"],"capitals":["caps","nocups","no cups","was","washington","dc"],
 	"flyers":["philly","phl"],"penguins":["pens","pittsburgh","pit","pgh"],"blue jackets":["bluejackets","lumbus","cbj","bjs","bj's"],
-	"hurricanes":["carolina","canes","car"],"devils":["nj","njd","jersey","devs","new jersey"],
+	"hurricanes":["carolina","canes","car","whale","whalers","hartford","brass bonanza"],"devils":["nj","njd","jersey","devs","new jersey"],
 	"red wings":["wings","det","detroit"],"sabres":["buffalo","buf"],"maple leafs":["leafs","buds","toronto","tor"],
 	"senators":["sens","ottawa"],"canadiens":["habs","montreal",u'montréal'],"bruins":["b's","bs"],
 	"panthers":["florida",'cats'],"lightning":["bolts","tb","tampa","tampa bay"],
-	"predators":["preds","nashville"],"blackhawks":['chi','hawks'],"blues":['stl'],"wild":['min'],
-	"jets":["no parks","peg","winnipeg"],"stars":["dallas","northstars"],
+	"predators":["preds","nashville","nsh","perds"],"blackhawks":['chi','hawks'],"blues":['stl'],"wild":['min'],
+	"jets":["no parks","peg","winnipeg"],"stars":["dallas","northstars","north stars"],
 	"avalanche":['avs','col','colorado'],
 	"oilers":['edm','oil'],"flames":['cgy','calgary'],"canucks":['nucks','van','vancouver'],
 	"sharks":['sj','san jose',u'san josé'],"kings":['la','lak'],"ducks":['ana','anaheim','mighty ducks'],
@@ -276,7 +276,7 @@ def phrase_game(game):
 			base += ","
 		return base + " " + timeset + "."
 	
-	elif status in (5,6):	# final, game over
+	elif status in (5,6,7):	# final, game over
 		# final
 		return "Final " + game_loc(game) + ", " + scoreline(game) + final_qualifier(game) + "."
 	else:
