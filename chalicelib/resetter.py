@@ -64,6 +64,8 @@ def getReset(g,team,fluidVerbose):
 			reset += getProbables(g,team)
 		else:
 			reset += g.attrib["away_team_name"] + " at " + g.attrib["home_team_name"] + " starts at " + g.attrib["time"] + " " + g.attrib["time_zone"] + "."
+		if stat in ANNOUNCE_STATUS_CODES:	# delayed start
+			reset = reset[:-1] + " (" + stat.lower() + ")."
 	
 	if stat in UNDERWAY_STATUS_CODES:
 		if g.get("double_header_sw") in ("Y","S"):
@@ -101,7 +103,11 @@ def getReset(g,team,fluidVerbose):
 		if (int(statNode.get("inning")) != 9):
 			reset += " in " + statNode.get("inning") + " innings"
 		reset += ". "
-			
+	
+	if (len(reset) == 0):
+		# give up
+		reset = g.attrib["away_team_name"] + " at " + g.attrib["home_team_name"] + " is " + stat.lower() + "."
+		
 	return reset
 	
 	
