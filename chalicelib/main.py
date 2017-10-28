@@ -13,15 +13,25 @@ def get_team(team):
 	
 	if line.endswith("football"):
 		retList = get_ncaaf(team[:-8].strip())
+	elif line.startswith("football "):
+		retList = get_ncaaf(team[9:].strip())
 	elif line.endswith("hockey"):
 		retList = get_nhl(team[:-6].strip())
+	elif line.startswith("hockey "):
+		retList = get_nhl(team[7:].strip())
 	elif line.endswith("nhl"):
 		retList = get_nhl(team[:-3].strip())
+	elif line.startswith("nhl "):
+		retList = get_nhl(team[4:].strip())
 	elif line.endswith("mlb"):
 		retList = get_mlb(team[:-3].strip())
+	elif line.startswith("mlb "):
+		retList = get_mlb(team[4:].strip())
 	elif line.endswith("baseball"):
 		retList = get_mlb(team[:-8].strip())
-	else:	
+	elif line.startswith("baseball "):
+		retList = get_mlb(team[9:].strip())
+	else:
 		retList = get_mlb(team,True)
 		if retList == None:
 			# try football?
@@ -34,6 +44,10 @@ def get_team(team):
 		retList = [retList]
 	
 	if retList == None:
+		if team.startswith("my "):
+			team = "your " + team[3:]
+		elif team.startswith("our "):
+			team = "your " + team[4:]
 		rtext = "I'm sorry, I can't reset " + team + "."
 	elif len(retList) == 1:
 		rtext = retList[0]
