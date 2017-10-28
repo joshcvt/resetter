@@ -25,6 +25,7 @@ ncaaNickDict = {'rebels': ['Ole Miss','UNLV'], "runnin' rebels":"unlv","ole miss
 	'huskies': 'washington', 
 	'cornhuskers': 'nebraska', 
 	'wildcats': ['Northwestern','Kentucky','Villanova','New Hampshire'], 
+	'medill':'northwestern','medill school of journalism':'northwestern',
 	'rockets': 'toledo', 
 	'nittany lions': 'penn st.', 'penn state':'penn st.', "lions":"penn st.","psu":"penn st.",
 	'demon deacons': 'wake forest', 
@@ -92,7 +93,8 @@ ncaaNickDict = {'rebels': ['Ole Miss','UNLV'], "runnin' rebels":"unlv","ole miss
 	'jaguars': 'south alabama', 
 	'miners': 'utep', 
 	'golden bears': 'california', 'berkeley': 'california', 'cal': 'california',
-	'spartans': 'san jose state', 'sjsu':'san jose state', 
+	'spartans': 'michst', "michigan st.":"michst", "michigan state":"mich. st.","msu":"mich. st.","sparty":"mich. st.",
+	'sjsu':'san jose state', 
 	'blazers': 'uab', 
 	'gators': 'florida', 
 	'owls': 'temple', 
@@ -131,7 +133,9 @@ displayOverrides = {
 	'louisiana':"Louisiana-Lafayette",
 	"la.-monroe":'Louisiana-Monroe',
 	"mississippi":"Ole Miss",
-	"california":"Cal"
+	"california":"Cal",
+	"mich. st.":"Michigan State",
+	"nwstrn":"Northwestern"
 }
 
 def validDabs():

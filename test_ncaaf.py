@@ -8,6 +8,7 @@ print "Trying some teams that are likely to have midweek games, some early, and 
 print str(get("Northern Ill."))
 print str(get("Toledo"))
 print str(get("Western Michigan"))
+print str(get("MSU"))
 print str(get("VT"))
 print str(get("FSU"))
 print str(get("Tennessee"))
