@@ -3,7 +3,7 @@
 
 import urllib2, json, time
 from datetime import datetime, timedelta
-from reset_lib import joinOr, sentenceCap
+from reset_lib import joinOr, sentenceCap, NoGameException
 
 intRolloverUtcTime = 1000
 

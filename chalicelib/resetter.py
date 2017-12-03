@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 from os import sys
 
 from nat_lib import *
+from reset_lib import NoGameException
 
 intRolloverLocalTime = 1000
 
