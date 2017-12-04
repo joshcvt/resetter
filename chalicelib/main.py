@@ -7,7 +7,7 @@ from ncaaf_ncaa import get as get_ncaaf
 from nhl import get as get_nhl
 from reset_lib import NoGameException	
 
-def get_team(team):
+def get_team_old(team):
 	"Generic fetch prioritization"
 	
 	line = team.strip().lower()
@@ -57,7 +57,7 @@ def get_team(team):
 	
 	return rtext
 	
-def get_team_exc(team):
+def get_team(team):
 
 	hold = False
 	retList = None
