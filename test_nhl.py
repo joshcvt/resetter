@@ -20,4 +20,7 @@ print str(get("canes",ffwd=True))   # this tests the lookup table
 print str(get("canadiens",ffwd=True)) + "\n"
 
 print "bad team:"
-print str(get("asdfas"))
+try:
+	print str(get("asdfas"))
+except Exception as e:
+	print repr(e)

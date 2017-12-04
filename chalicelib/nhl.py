@@ -17,18 +17,18 @@ validTeams = ("rangers","islanders","capitals","flyers","penguins","blue jackets
 	"oilers","flames","canucks","sharks","kings","ducks","coyotes","golden knights"
 )
 
-derefs = { "rangers":["nyr","blueshirts"],"islanders":["isles","nyi"],"capitals":["caps","nocups","no cups","was","washington","dc"],
-	"flyers":["philly","phl"],"penguins":["pens","pittsburgh","pit","pgh"],"blue jackets":["bluejackets","lumbus","cbj","bjs","bj's"],
+derefs = { "rangers":["nyr","blueshirts"],"islanders":["isles","nyi","brooklyn"],"capitals":["caps","nocups","no cups","was","washington","dc"],
+	"flyers":["philly","phl","philadelphia"],"penguins":["pens","pittsburgh","pit","pgh"],"blue jackets":["bluejackets","lumbus","cbj","bjs","bj's","columbus"],
 	"hurricanes":["carolina","canes","car","whale","whalers","hartford","brass bonanza"],"devils":["nj","njd","jersey","devs","new jersey"],
 	"red wings":["wings","det","detroit"],"sabres":["buffalo","buf"],"maple leafs":["leafs","buds","toronto","tor"],
-	"senators":["sens","ottawa"],"canadiens":["habs","montreal",u'montréal'],"bruins":["b's","bs"],
-	"panthers":["florida",'cats'],"lightning":["bolts","tb","tampa","tampa bay"],
-	"predators":["preds","nashville","nsh","perds"],"blackhawks":['chi','hawks'],"blues":['stl'],"wild":['min'],
+	"senators":["sens","ottawa"],"canadiens":["habs","montreal",u'montréal'],"bruins":["b's","bs","boston"],
+	"panthers":["florida",'cats',"fla"],"lightning":["bolts","tb","tampa","tampa bay"],
+	"predators":["preds","nashville","nsh","perds"],"blackhawks":['chi',"chicago",'hawks'],"blues":['stl',"st. louis","st louis"],"wild":['min',"minnesota"],
 	"jets":["no parks","peg","winnipeg"],"stars":["dallas","northstars","north stars"],
 	"avalanche":['avs','col','colorado'],
-	"oilers":['edm','oil'],"flames":['cgy','calgary'],"canucks":['nucks','van','vancouver'],
-	"sharks":['sj','san jose',u'san josé'],"kings":['la','lak'],"ducks":['ana','anaheim','mighty ducks'],
-	"coyotes":['phx','ari','arizona','yotes'],"golden knights":['vegas','lv','knights',"vgk"]
+	"oilers":['edm','oil',"edmonton"],"flames":['cgy','calgary'],"canucks":['nucks','van','vancouver'],
+	"sharks":['sj','san jose',u'san josé'],"kings":['la','lak',"los angeles"],"ducks":['ana','anaheim','mighty ducks'],
+	"coyotes":['phx','ari','arizona','yotes',"phoenix"],"golden knights":['vegas','lv','knights',"vgk","las vegas"]
 }
 
 __MOD = {}
@@ -320,6 +320,7 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
 			ret = "No games today."
 		else:	
 			ret = "No game today for the " + vtoc[tkey].capitalize() + "."
+		raise NoGameException(ret)
 	
 	elif game.__class__ == list:	# full scoreboard or preseason split-squad
 		ret = ""

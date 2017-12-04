@@ -1,24 +1,26 @@
 #!/usr/bin/env python
 
 from chalicelib.ncaaf_ncaa import get
+from chalicelib.reset_lib import NoGameException
 
 print "Trying some teams that are likely to have midweek games, some early, and Hawaii (aloha).\n"
 
+teams = ["Northern Ill.","Toledo","Western Michigan","MSU","VT","FSU","Tennessee","LSU","California","UCLA","Hawaii"]
 
-print str(get("Northern Ill."))
-print str(get("Toledo"))
-print str(get("Western Michigan"))
-print str(get("MSU"))
-print str(get("VT"))
-print str(get("FSU"))
-print str(get("Tennessee"))
-print str(get("LSU"))
-print str(get("California"))
-print str(get("UCLA"))
-print str(get("Hawaii"))
+for t in teams:
+	try:
+		print get(t)
+	except NoGameException as nge:
+		print str(nge)
 
-print "\nI-AA: " + str(get("jmu"))
-print "Unclear: " + str(get("tigers"))
-print "Doesn't exist (should be None): " + str(get("sdagasdgas"))
+print "Now: I-AA, Unclear, Doesn't Exist:"
+
+teams = ["jmu","tigers","aasdfasdg"]
+
+for t in teams:
+	try:
+		print get(t)
+	except NoGameException as nge:
+		print str(nge)
 
 print "Make sure a reload works: " + str(get("VT",forceReload=True))

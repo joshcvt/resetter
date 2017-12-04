@@ -197,6 +197,7 @@ def get(team,forceReload=False):
 	ret = "No game this week for " + team
 	if ret[-1] != ".":
 		ret += "."
-	return ret
+		
+	raise NoGameException(ret)
 
 	

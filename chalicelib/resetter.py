@@ -193,7 +193,7 @@ def launch(team,fluidVerbose=False,rewind=False,ffwd=False):
 	vtoc = buildVarsToCode()
 
 	if team.lower() in dabList:
-		return ["Did you mean " + join(dabList[team]," or ") + "?"]
+		return ["Did you mean " + join(dabList[team.lower()]," or ") + "?"]
 	elif team.lower() not in vtoc:
 		return None
 	
@@ -207,7 +207,7 @@ def launch(team,fluidVerbose=False,rewind=False,ffwd=False):
 	gns = findGameNodes(masterScoreboardTree,vtoc[team])
 	
 	if len(gns) == 0:
-		return ["No game today for " + team + "."]
+		raise NoGameException("No game today for " + team + ".")
 	
 	rv = []
 	for gn in gns:
