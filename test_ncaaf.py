@@ -23,4 +23,4 @@ for t in teams:
 	except NoGameException as nge:
 		print str(nge)
 
-print "Make sure a reload works: " + str(get("VT",forceReload=True))
+print "Make sure a reload works (and dump exception directly if not): " + str(get("VT",forceReload=True))

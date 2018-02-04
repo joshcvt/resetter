@@ -41,7 +41,13 @@ def get_scoreboard(file=None,iaa=False):
 		week_url = SCOREBOARD_URL.replace("WHAT_WEEK",what_week())
 		if iaa:
 			week_url = week_url.replace("fbs","fcs")
-		fh = urllib2.urlopen(week_url)	
+		try:
+			fh = urllib2.urlopen(week_url)
+		except urllib2.HTTPError as e:
+			if e.code == 404:
+				raise NoGameException("Scoreboard was HTTP 404 Not Found. This probably means the season is over.")	
+			else:
+				raise e
 	else:
 		fh = open(file)
 	
