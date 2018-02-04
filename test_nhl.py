@@ -1,23 +1,39 @@
 #!/usr/bin/env python
 
 from chalicelib.nhl import get
+from chalicelib.reset_lib import NoGameException
 
 print "Should see: full scoreboard, then a couple single games or attempts, for three days. 'Today' starts at rolloverTime.\n"
 
+testTeams = ["scoreboard","canes","canadiens"]
+# scoreboard for all, canes for lookup table, canadiens for direct team name
+
 print "yesterday:"
-print str(get("scoreboard",rewind=True)) + "\n"
-print str(get("canes",rewind=True))   # this tests the lookup table
-print str(get("canadiens",rewind=True)) + "\n"
+for t in testTeams:
+	try:
+		print str(get(t,rewind=True)) + "\n"
+	except NoGameException:
+		print "No game for " + t
+	except Exception as e:
+		print str(e)
 
 print "today:"
-print str(get("scoreboard")) + "\n"
-print str(get("canes"))   # this tests the lookup table
-print str(get("canadiens")) + "\n"
+for t in testTeams:
+	try:
+		print str(get(t)) + "\n"
+	except NoGameException:
+		print "No game for " + t
+	except Exception as e:
+		print str(e)
 
 print "tomorrow:"
-print str(get("scoreboard",ffwd=True)) + "\n"
-print str(get("canes",ffwd=True))   # this tests the lookup table
-print str(get("canadiens",ffwd=True)) + "\n"
+for t in testTeams:
+	try:
+		print str(get(t,ffwd=True)) + "\n"
+	except NoGameException:
+		print "No game for " + t
+	except Exception as e:
+		print str(e)
 
 print "bad team:"
 try:
