@@ -25,3 +25,7 @@ def sentenceCap(sen):
 
 class NoGameException(Exception):
 	pass
+
+class DabException(Exception):
+	def __init__(self,teamOpts=[]):
+		self.teamOpts = teamOpts
