@@ -3,7 +3,8 @@
 
 import urllib2, json, time
 from datetime import datetime, timedelta
-from reset_lib import joinOr, sentenceCap, NoGameException
+from reset_lib import joinOr, sentenceCap, NoGameException, DabException
+from string import capwords
 
 intRolloverUtcTime = 1000
 
@@ -16,6 +17,10 @@ validTeams = ("rangers","islanders","capitals","flyers","penguins","blue jackets
 	"predators","blackhawks","blues","wild","jets","stars","avalanche",
 	"oilers","flames","canucks","sharks","kings","ducks","coyotes","golden knights"
 )
+
+dabBacks = {
+	"ny":["Rangers","Islanders"]
+}
 
 derefs = { "rangers":["nyr","blueshirts"],"islanders":["isles","nyi","brooklyn"],"capitals":["caps","nocups","no cups","was","washington","dc"],
 	"flyers":["philly","phl","philadelphia"],"penguins":["pens","pittsburgh","pit","pgh"],"blue jackets":["bluejackets","lumbus","cbj","bjs","bj's","columbus"],
@@ -289,14 +294,18 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
 
 	vtoc = buildVarsToCode()
 	#print vtoc
+	
+	tkey = team.lower().strip()
+	
+	if not (tkey == "scoreboard") or (tkey in vtoc):
+		return None
+	
 	sb = get_scoreboard(fluidVerbose=fluidVerbose,rewind=rewind,ffwd=ffwd)
 	#print json.dumps(sb, sort_keys=True, indent=4, separators=(',', ': '))
 	try:
 		__MOD["dst"] = todayIsDst(sb)
 	except TzFailedUseLocalException:
 		__MOD["dst"] = "local"
-	
-	tkey = team.lower().strip()
 	
 	ret = ""
 	
@@ -309,9 +318,6 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
 			print "full scoreboard get blew out, not IndexError\n" + str(e)	# for logging
 			game = []
 	
-	elif not (tkey in vtoc):
-		return None
-	
 	else:
 		game = get_game(sb,vtoc[tkey])
 	
@@ -319,7 +325,7 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
 		if game.__class__ == list:
 			ret = "No games today."
 		else:	
-			ret = "No game today for the " + vtoc[tkey].capitalize() + "."
+			ret = "No game today for the " + capwords(vtoc[tkey]) + "."
 		raise NoGameException(ret)
 	
 	elif game.__class__ == list:	# full scoreboard or preseason split-squad
