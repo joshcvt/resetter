@@ -123,7 +123,8 @@ def loadMasterScoreboard(msURL,scheduleDT):
 		return msTree
 
 	#except socket.timeout as e:
-	#except urllib2.HTTPError as e:
+	except urllib2.HTTPError as e:
+		print "HTTP " + str(e.code) + " on URL: " + scheduleUrl
 		#if e.code in (404,403,500,410):
 		#elif e.code != 200:
 	#except urllib2.URLError as e:
@@ -204,7 +205,10 @@ def launch(team,fluidVerbose=False,rewind=False,ffwd=False):
 	masterScoreboardUrl = leagueAgnosticMasterScoreboardUrl.replace("LEAGUEBLOCK","mlb")
 	masterScoreboardTree = loadMasterScoreboard(masterScoreboardUrl,todayDT)
 	
-	gns = findGameNodes(masterScoreboardTree,vtoc[team])
+	if masterScoreboardTree:
+		gns = findGameNodes(masterScoreboardTree,vtoc[team])
+	else:
+		gns = []
 	
 	if len(gns) == 0:
 		raise NoGameException("No game today for " + team + ".")
