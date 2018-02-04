@@ -297,7 +297,7 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
 	
 	tkey = team.lower().strip()
 	
-	if not (tkey == "scoreboard") or (tkey in vtoc):
+	if not ((tkey == "scoreboard") or (tkey in vtoc)):
 		return None
 	
 	sb = get_scoreboard(fluidVerbose=fluidVerbose,rewind=rewind,ffwd=ffwd)
