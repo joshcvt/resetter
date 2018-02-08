@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 from os import sys
 
 from nat_lib import *
-from reset_lib import NoGameException
+from reset_lib import NoGameException, NoTeamException, DabException
 
 intRolloverLocalTime = 1000
 
@@ -179,7 +179,7 @@ def getProbables(g,tvTeam=None):
 	return runningStr
 
 
-def launch(team,fluidVerbose=False,rewind=False,ffwd=False):
+def launch(team,fluidVerbose=True,rewind=False,ffwd=False):
 
 	#logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',filename=logFN, level=logLevel)
 	

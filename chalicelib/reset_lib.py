@@ -23,6 +23,9 @@ def sentenceCap(sen):
 	else:
 		return sen[0].upper() + sen[1:]
 
+class NoTeamException(Exception):
+	pass
+
 class NoGameException(Exception):
 	pass
 

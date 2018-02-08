@@ -3,7 +3,7 @@
 
 import urllib2, json, time
 from datetime import datetime, timedelta
-from reset_lib import joinOr, sentenceCap, NoGameException, DabException
+from reset_lib import joinOr, sentenceCap, NoGameException, NoTeamException, DabException
 from string import capwords
 
 intRolloverUtcTime = 1000
@@ -297,8 +297,11 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
 	
 	tkey = team.lower().strip()
 	
+	if tkey in dabBacks:
+		raise DabException(dabBacks[tkey])
+	
 	if not ((tkey == "scoreboard") or (tkey in vtoc)):
-		return None
+		raise NoTeamException
 	
 	sb = get_scoreboard(fluidVerbose=fluidVerbose,rewind=rewind,ffwd=ffwd)
 	#print json.dumps(sb, sort_keys=True, indent=4, separators=(',', ': '))

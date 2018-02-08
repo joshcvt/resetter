@@ -2,7 +2,7 @@
 
 import urllib2, json, time
 from datetime import datetime, timedelta
-from reset_lib import joinOr, sentenceCap, NoGameException
+from reset_lib import joinOr, sentenceCap, NoGameException, NoTeamException
 from ncaa_lib import ncaaNickDict, displayOverrides, iaa, validFbSet
 
 SCOREBOARD_URL = "http://data.ncaa.com/jsonp/scoreboard/football/fbs/2017/WHAT_WEEK/scoreboard.html?callback=ncaaScoreboard.dispScoreboard"
@@ -175,7 +175,7 @@ def get(team,forceReload=False):
 		print "loading I-AA scoreboard from NCAA"
 		sb = get_scoreboard(iaa=True)
 	elif tkey not in validFbSet:
-		return None
+		raise NoTeamException
 	else:
 		if forceReload or ("sb" not in __MOD) or (("sbdt" in __MOD) and (datetime.utcnow() - __MOD["sbdt"] > timedelta(minutes=1))):
 			print "loading scoreboard from NCAA"

@@ -5,69 +5,71 @@ from string import join
 from resetter import launch as get_mlb
 from ncaaf_ncaa import get as get_ncaaf
 from nhl import get as get_nhl
-from reset_lib import NoGameException	
+from reset_lib import NoGameException, NoTeamException, DabException
 	
-def get_team(team):
+def get_team(team,debug=False):
 
 	hold = False
 	retList = None
+	opts = []
 		
+	fns = {"mlb":get_mlb,"football":get_ncaaf,"nhl":get_nhl}
 	
+	# first, try if the sport's defined.
 	try:
 		(tm,sport) = sport_strip(team)
-		print "got " + tm + ", " + sport
-		if sport == "nhl":
+		if debug:
+			print "got " + tm + ", " + sport
+		if sport in fns:
 			try:
-				retList = get_nhl(tm)
-			except NoGameException as nge:
-				hold = str(nge)
-		elif sport == "mlb":
-			try:
-				retList = get_mlb(tm)
-			except NoGameException as nge:
-				hold = str(nge)
-		elif sport == "football":
-			try:
-				retList = get_ncaaf(tm)
-			except NoGameException as nge:
-				hold = str(nge)
+				retList = fns[k](tm)
+			except NoGameException as e:
+				hold = str(e)
+			except NoTeamException as e:
+				hold = "No team " + tm + " found."
 	
+	# if it isn't:
 	except NoSportException:
 		
-		try:
-			retList = get_mlb(team,True)
-		except NoGameException as nge:
-			hold = str(nge)
-
-		if not retList:		# it's None
+		for k in fns:
+			if debug:
+				print "calling " + k,
+			
 			try:
-				retList = get_ncaaf(team)
-			except NoGameException as nge:
-				hold = str(nge)	# it'll override in a Miami situation, but that's OK.
-		
-		if not retList:
-			try:
-				retList = get_nhl(team)
-			except NoGameException as nge:
-				hold = str(nge)
-		
-	if not retList:
-		if hold:
-			retList = hold
-		else:
-			if team.startswith("my "):
-				team = "your " + team[3:]
-			elif team.startswith("our "):
-				team = "your " + team[4:]
-			retList = "I'm sorry, I can't reset " + team + "."
+				return rtext(fns[k](team))
+			except Exception as e:
+				if debug:
+					print e.__class__.__name__,
+				
+				if isinstance(e,NoGameException):
+					hold = str(e)
+				elif isinstance(e,NoTeamException):
+					hold = "No team " + team + " found."
+				elif isinstance(e,DabException):
+					opts.extend(teamOpts)
+								
+	if opts:
+		retList = "Did you mean " + joinOr(opts) + "?"
+	elif hold:
+		retList = hold
+	else:
+		if team.startswith("my "):
+			team = "your " + team[3:]
+		elif team.startswith("our "):
+			team = "your " + team[4:]
+		retList = "I'm sorry, I can't reset " + team + "."
 	
-	if retList and (retList.__class__ != list):
+	return rtext(retList)
+	
+
+def rtext(retList):
+	
+	if not retList:
+		retList = [""]
+	elif (retList.__class__ != list):
 		retList = [retList]
 	
-	if len(retList) == 1:
-		rtext = retList[0]
-	else:
-		rtext = join(retList," ")
+	rtext = join(retList," ")
 	
 	return rtext
 
