@@ -5,7 +5,7 @@ from chalicelib.reset_lib import NoGameException
 
 print "Should see: full scoreboard, then a couple single games or attempts, for three days. 'Today' starts at rolloverTime.\n"
 
-testTeams = ["scoreboard","canes","canadiens"]
+testTeams = ["scoreboard","canes","canadiens","Washington","NYR"]
 # scoreboard for all, canes for lookup table, canadiens for direct team name
 
 print "yesterday:"
