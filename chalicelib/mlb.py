@@ -196,7 +196,7 @@ def launch(team,fluidVerbose=True,rewind=False,ffwd=False):
 	if team.lower() in dabList:
 		return ["Did you mean " + join(dabList[team.lower()]," or ") + "?"]
 	elif team.lower() not in vtoc:
-		return None
+		raise NoTeamException
 	
 	todayDT = datetime.now() - timedelta(minutes=((localRollover/100)*60+(localRollover%100)))
 	todayStr = todayDT.strftime("%Y-%m-%d")

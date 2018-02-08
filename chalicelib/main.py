@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
-from string import join
+from string import join, capwords
 
 from mlb import launch as get_mlb
 from ncaaf_ncaa import get as get_ncaaf
 from nhl import get as get_nhl
 from reset_lib import NoGameException, NoTeamException, DabException
-	
+
 def get_team(team,debug=False):
 
-	hold = False
+	hold = None
 	retList = None
 	opts = []
 		
@@ -17,16 +17,21 @@ def get_team(team,debug=False):
 	
 	# first, try if the sport's defined.
 	try:
-		(tm,sport) = sport_strip(team)
+		(team,sport) = sport_strip(team)
 		if debug:
-			print "got " + tm + ", " + sport
+			print "got " + team + ", " + sport
 		if sport in fns:
 			try:
-				retList = fns[k](tm)
-			except NoGameException as e:
-				hold = str(e)
-			except NoTeamException as e:
-				hold = "No team " + tm + " found."
+				rv = fns[sport](team)
+				if rv:
+					return rtext(rv)
+			#except NoGameException as e:
+			#	hold = "No game today for " + tm + "."
+			#except NoTeamException as e:
+			#	hold = "No team " + tm + " found."
+			except Exception as e:
+				print "got exception: " + e.__class__.__name__ + " " + str(e)
+				hold = e
 	
 	# if it isn't:
 	except NoSportException:
@@ -52,8 +57,8 @@ def get_team(team,debug=False):
 								
 	if opts:
 		retList = "Did you mean " + joinOr(opts) + "?"
-	elif hold:
-		retList = hold
+	elif hold and isinstance(hold,NoGameException):
+		retList = "No game today for " + capwords(team) + "."
 	else:
 		if team.startswith("my "):
 			team = "your " + team[3:]
@@ -104,6 +109,17 @@ def sport_strip(team):
 	
 	raise NoSportException()
 
+
+def except_priority(e):
+	"""Should an exception of this class be allowed to overwrite the hold msg?"""
+	if not e:
+		return -1
+	elif isinstance(e,NoTeamException):
+		return 0
+	elif isinstance(e,NoGameException):
+		return 1
+	else:
+		return 2
 
 class NoSportException(Exception):
 	pass
