@@ -2,7 +2,7 @@
 
 from string import join
 
-from resetter import launch as get_mlb
+from mlb import launch as get_mlb
 from ncaaf_ncaa import get as get_ncaaf
 from nhl import get as get_nhl
 from reset_lib import NoGameException, NoTeamException, DabException
@@ -36,7 +36,9 @@ def get_team(team,debug=False):
 				print "calling " + k,
 			
 			try:
-				return rtext(fns[k](team))
+				rv = fns[k](team)
+				if rv:
+					return rtext(rv)
 			except Exception as e:
 				if debug:
 					print e.__class__.__name__,

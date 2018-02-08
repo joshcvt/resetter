@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from chalicelib.resetter import launch
+from chalicelib.mlb import launch
 
 print "Should see: standard, verbose for each game. 'Today' starts at rolloverTime.\n"
 
