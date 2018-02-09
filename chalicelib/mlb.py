@@ -194,7 +194,8 @@ def launch(team,fluidVerbose=True,rewind=False,ffwd=False):
 	vtoc = buildVarsToCode()
 
 	if team.lower() in dabList:
-		return ["Did you mean " + join(dabList[team.lower()]," or ") + "?"]
+		#return ["Did you mean " + join(dabList[team.lower()]," or ") + "?"]
+		raise DabException(dabList[team.lower()])
 	elif team.lower() not in vtoc:
 		raise NoTeamException
 	

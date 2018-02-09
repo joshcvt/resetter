@@ -5,7 +5,7 @@ from string import join, capwords
 from mlb import launch as get_mlb
 from ncaaf_ncaa import get as get_ncaaf
 from nhl import get as get_nhl
-from reset_lib import NoGameException, NoTeamException, DabException
+from reset_lib import joinOr, NoGameException, NoTeamException, DabException
 
 def get_team(team,debug=False):
 
@@ -48,17 +48,20 @@ def get_team(team,debug=False):
 				if debug:
 					print e.__class__.__name__,
 				
-				if isinstance(e,NoGameException):
-					hold = str(e)
-				elif isinstance(e,NoTeamException):
+				if isinstance(e,NoTeamException) and not isinstance(hold,NoGameException): 
+					# don't override an NGE.
 					hold = "No team " + team + " found."
+				elif isinstance(e,NoGameException):
+					hold = e
 				elif isinstance(e,DabException):
-					opts.extend(teamOpts)
+					opts.extend(e.teamOpts)
 								
 	if opts:
 		retList = "Did you mean " + joinOr(opts) + "?"
 	elif hold and isinstance(hold,NoGameException):
-		retList = "No game today for " + capwords(team) + "."
+		if team.upper() != team:	# don't override if it's something like NYY
+			team = capwords(team)
+		retList = "No game today for " + team + "."
 	else:
 		if team.startswith("my "):
 			team = "your " + team[3:]
@@ -109,17 +112,6 @@ def sport_strip(team):
 	
 	raise NoSportException()
 
-
-def except_priority(e):
-	"""Should an exception of this class be allowed to overwrite the hold msg?"""
-	if not e:
-		return -1
-	elif isinstance(e,NoTeamException):
-		return 0
-	elif isinstance(e,NoGameException):
-		return 1
-	else:
-		return 2
 
 class NoSportException(Exception):
 	pass
