@@ -171,9 +171,12 @@ def getProbables(g,tvTeam=None):
 			bc = "away"
 		try:
 			bcast = g.find("broadcast").find(bc).find("tv").text
-			runningStr += " TV broadcast is on " + bcast + "."
+			if bcast:
+				runningStr += " TV broadcast is on " + bcast + "."
+			else:
+				runningStr += " No TV."
 		except Exception, e:
-			print e
+			print "bcast exception:" + str(e)
 			pass	
 	
 	return runningStr
