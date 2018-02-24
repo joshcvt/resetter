@@ -36,9 +36,14 @@ def buildVarsToCode():
 
 def placeAndScore(g):
 
-	reset = g.get("location").split(",")[0]
-	if (reset == "Bronx"):
-		reset = "the " + reset	# "In Bronx" looks and sounds funny.
+	loc = g.get("location").split(",")[0]
+	if not loc:
+		reset = "at " + g.get("venue") 
+	elif loc == "Bronx":
+		reset = "in the Bronx"
+	else:
+		reset = "in " + loc
+
 	reset +=  ", "
 	
 	# score
@@ -69,13 +74,16 @@ def getReset(g,team,fluidVerbose):
 			reset = reset[:-1] + " (" + stat.lower() + ")."
 	
 	if stat in UNDERWAY_STATUS_CODES:
-		if g.get("double_header_sw") in ("Y","S"):
-			reset += "Game " + g.get("game_nbr") + " in "
-		else:
-			reset += "In "
 		
 		inningState = statNode.get("inning_state").lower()
-		reset += placeAndScore(g) + ", " + inningState + " of the " + divOrdinal(statNode.get("inning")) + ". "
+		reset = placeAndScore(g) + ", " + inningState + " of the " + divOrdinal(statNode.get("inning")) + ". "
+		
+		# might have at, might have in as the front.		
+		if g.get("double_header_sw") in ("Y","S"):
+			reset = "Game " + g.get("game_nbr") + " " + reset
+		else:
+			reset = reset[0].upper() + reset[1:]
+						
 		if inningState in ("top","bottom"): 	#in play
 			obstrs = { "0": "",	# don't need to say anything
 						"1": "Runner on first. ",
@@ -100,7 +108,7 @@ def getReset(g,team,fluidVerbose):
 		reset += "Final "
 		if g.get("double_header_sw") in ("Y","S"):	# S is for makeups
 			reset += "of game " + g.get("game_nbr") + " "
-		reset += "in " + placeAndScore(g)
+		reset += placeAndScore(g)
 		if (int(statNode.get("inning")) != 9):
 			reset += " in " + statNode.get("inning") + " innings"
 		reset += ". "
