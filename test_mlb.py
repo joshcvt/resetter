@@ -4,23 +4,15 @@ from chalicelib.mlb import launch
 
 print "Should see: standard, verbose for each game. 'Today' starts at rolloverTime.\n"
 
-print "yesterday:"
-print str(launch("WSH",rewind=True))
-print str(launch("WSH",fluidVerbose=True,rewind=True))
-print str(launch("SD",rewind=True))
-print str(launch("SD",fluidVerbose=True,rewind=True))
+for (rew, ff, day) in [(True, False, "yesterday"),(False,False,"today"),(False,True,"tomorrow")]:
+	print ("\n" + day + ":")
+	for team in ["WSH","SD"]:
+		for fv in [False,True]:
+			try:
+				print str(launch(team,rewind=rew,ffwd=ff,fluidVerbose=fv))
+			except Exception as e:
+				print str(e)
+				
 
-print "today:"
-print str(launch("WSH"))
-print str(launch("WSH",fluidVerbose=True))
-print str(launch("SD"))
-print str(launch("SD",fluidVerbose=True))
-
-print "tomorrow:"
-print str(launch("WSH",ffwd=True))
-print str(launch("WSH",fluidVerbose=True,ffwd=True))
-print str(launch("SD",ffwd=True))
-print str(launch("SD",fluidVerbose=True,ffwd=True))
-
-print "bad team:"
+print "\nbad team:"
 print str(launch("asdfas"))
