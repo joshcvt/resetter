@@ -79,13 +79,14 @@ def get_team(team,debug=False):
 def rtext(retList):
 	
 	if not retList:
-		retList = [""]
+		return ""
 	elif (retList.__class__ != list):
-		retList = [retList]
-	
-	rtext = join(retList," ")
-	
-	return rtext
+		return retList
+	elif len(rtext) > 1:
+		rtext = join(retList,"\n")
+		return rtext
+	else:
+		return retList[0]
 
 	
 def sport_strip(team):
