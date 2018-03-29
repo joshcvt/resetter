@@ -6,7 +6,7 @@ print "Should see: standard, verbose for each game. 'Today' starts at rolloverTi
 
 for (rew, ff, day) in [(True, False, "yesterday"),(False,False,"today"),(False,True,"tomorrow")]:
 	print ("\n" + day + ":")
-	for team in ["WSH","SD"]:
+	for team in ["WSH","SD","scoreboard"]:
 		for fv in [False,True]:
 			try:
 				print str(launch(team,rewind=rew,ffwd=ff,fluidVerbose=fv))
