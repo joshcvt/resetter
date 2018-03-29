@@ -83,7 +83,7 @@ def rtext(retList):
 	elif (retList.__class__ != list):
 		retList = [retList]
 	
-	if len(rtext) > 1:
+	if len(retList) > 1:
 		rtext = join(retList,'\n')
 	else:
 		rtext = join(retList," ")
