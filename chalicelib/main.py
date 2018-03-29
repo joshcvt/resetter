@@ -59,9 +59,13 @@ def get_team(team,debug=False):
 	if opts:
 		retList = "Did you mean " + joinOr(opts) + "?"
 	elif hold and isinstance(hold,NoGameException):
-		if team.upper() != team:	# don't override if it's something like NYY
-			team = capwords(team)
-		retList = "No game today for " + team + "."
+		
+		if team in ('scoreboard','schedule'):
+			retList = str(e)
+		else:
+			if team.upper() != team:	# don't override if it's something like NYY
+				team = capwords(team)
+			retList = "No game today for " + team + "."
 	else:
 		if team.startswith("my "):
 			team = "your " + team[3:]
