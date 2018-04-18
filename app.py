@@ -17,6 +17,12 @@ def index():
 			team = DEFAULT_PARAM
 	except:
 		team = DEFAULT_PARAM
+	
+	# allows /scoreboard
+	try:
+		team = app.current_request.query_params['override']
+	except:
+		pass
 
 	print "getting for team " + team
 	rtext = get_team(team)
