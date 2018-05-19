@@ -124,7 +124,17 @@ def getReset(g,team,fluidVerbose):
 		reset = g.attrib["away_team_name"] + " at " + g.attrib["home_team_name"] 
 		if is_dh:
 			reset += ' (game ' + str(g.attrib["game_nbr"]) + ')'
-		reset += " is " + stat.lower() + "."
+		reset += " is " + stat.lower() 
+		
+		if stat in POSTPONED_STATUS_CODES:
+			try:
+				desc = g.attrib["description"]
+				if desc and len(desc.strip()) > 0:
+					reset += " (" + desc + ")"
+			except:
+				pass
+		
+		reset += "."
 		
 	return reset
 	
