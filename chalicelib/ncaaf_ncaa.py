@@ -5,18 +5,18 @@ from datetime import datetime, timedelta
 from reset_lib import joinOr, sentenceCap, NoGameException, NoTeamException
 from ncaa_lib import ncaaNickDict, displayOverrides, iaa, validFbSet
 
-SCOREBOARD_URL = "http://data.ncaa.com/jsonp/scoreboard/football/fbs/2017/WHAT_WEEK/scoreboard.html?callback=ncaaScoreboard.dispScoreboard"
+SCOREBOARD_URL = "http://data.ncaa.com/jsonp/scoreboard/football/fbs/2018/WHAT_WEEK/scoreboard.html?callback=ncaaScoreboard.dispScoreboard"
 
 # these are season (year) specific before/after times in UTC
 # we specify the week1/week2 break because Week 1 is often more than a week. 
 # From this time, though, we can trust that the rest of the weeks are in fact Tuesday-Monday
 # weeks -- even in bowl season, at least in 2016.
-WEEK_1_2_FLIP_UTC = datetime(2017,9,5,16,0)
+WEEK_1_2_FLIP_UTC = datetime(2018,9,4,16,0)
 
 # when, during the season, we go from EDT to EST.
 # correct way to do this is with tzinfo, but I'd like to avoid packaging extra libraries,
 # and we have to manually set the WEEK_1_2_FLIP_UTC value every year anyway.
-DST_FLIP_UTC = datetime(2017,11,5,6,0)
+DST_FLIP_UTC = datetime(2018,11,4,6,0)
 
 # what we expect the API to give us.  EST/EDT, most likely.
 API_TZ_STD_DT = (-5,-4)
