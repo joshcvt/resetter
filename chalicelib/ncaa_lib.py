@@ -12,6 +12,8 @@ ncaaNickDict = {'rebels': ['Ole Miss','UNLV'], "runnin' rebels":"unlv","ole miss
 	'lobos': 'new mexico', 
 	'golden eagles': 'southern miss', 
 	'tar heels': 'north carolina', 
+	'unc': 'north carolina',
+	'carolina': 'north carolina',
 	'midshipmen': 'navy', 'mids': 'navy',
 	'red wolves': 'arkansas st.', 'arkansas state': 'arkansas st.', 
 	'orange': 'syracuse', 
