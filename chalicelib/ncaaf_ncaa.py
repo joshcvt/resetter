@@ -158,6 +158,9 @@ def status(game):
 	elif game["gameState"] in ("cancelled","postponed"):
 		status = rank_name(game["away"]) + " vs. " + rank_name(game["home"]) + " originally scheduled for" + spaceday(game,sayToday=True) + " " + game_loc(game) + " is " + game["gameState"] + "."
 	
+	elif game["gameState"] in ("delayed"):
+		status = rank_name(game["away"]) + " vs. " + rank_name(game["home"]) + " " + game_loc(game) + " is " + game["gameState"] + "."
+	
 	else:
 		status = "HELP! I don't understand game state '" + game["gameState"] + "' for " + rank_name(game["away"]) + " vs. " + rank_name(game["home"]) + "."
 	
