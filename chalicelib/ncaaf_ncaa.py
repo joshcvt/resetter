@@ -45,7 +45,7 @@ def get_scoreboard(file=None,iaa=False):
 			fh = urllib2.urlopen(week_url)
 		except urllib2.HTTPError as e:
 			if e.code == 404:
-				raise NoGameException("Scoreboard was HTTP 404 Not Found. This probably means the season is over.")	
+				raise NoGameException("Scoreboard was HTTP 404 Not Found. This probably means the season is over.\n"+week_url)	
 			else:
 				raise e
 	else:
