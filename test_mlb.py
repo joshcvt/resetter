@@ -6,6 +6,8 @@ from chalicelib.mlbstatsapi import launch as launchsapi
 print "Should see: standard, verbose for each game. 'Today' starts at rolloverTime.\n"
 
 for (rew, ff, day) in [(True, False, "yesterday"),(False,False,"today"),(False,True,"tomorrow")]:
+#for (rew, ff, day) in [(False,False,"today")]:
+#for (rew, ff, day) in [(False,True,"tomorrow")]:
 	print ("\n" + day + ":")
 	for team in ["WSH","SD","scoreboard"]:
 		for fv in [False,True]:
