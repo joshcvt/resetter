@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import urllib2, json, traceback # ConfigParser, argparse	     #, logging
+import urllib2, json, traceback 
 from datetime import timedelta, datetime, date
 from string import join
 from os import sys
@@ -25,7 +25,6 @@ def findGameNodes(sapiDict,team):
 				if ((gm["teams"]["home"]["team"]["abbreviation"] == team) or (gm["teams"]["away"]["team"]["abbreviation"] == team)):
 					ret.append(gm)
 	
-	#print "I was called for " + team + " and I'm returning " + str(len(ret)) + " values"
 	return ret
 
 
@@ -68,15 +67,14 @@ def placeAndScore(g):
 	return reset
 
 def is_doubleheader(g):
-	return (g.get("double_header_sw") in ("Y","S"))
+	return (g["doubleHeader"] in ("Y","S"))
 
 
 def getReset(g,team,fluidVerbose):
 	if g == None:
 		return "No game today."
 
-	statNode = g.find("status")
-	stat = statNode.get("status")
+	stat = g["status"]["detailedState"]
 	reset = ""
 	
 	is_dh = is_doubleheader(g)
