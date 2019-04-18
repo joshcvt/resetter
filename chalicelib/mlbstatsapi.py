@@ -53,7 +53,7 @@ def placeAndScore(g):
 		reset = "at " + gameVenue
 	else:
 		reset = "in " + g["teams"]["home"]["team"]["locationName"]
-		if reset == "Bronx":
+		if reset == "in Bronx":
 			reset = "in the Bronx"
 
 	reset +=  ", "
