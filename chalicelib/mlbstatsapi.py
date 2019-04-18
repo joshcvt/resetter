@@ -193,33 +193,38 @@ def getPitcher(g,ah):
 	if ah not in ("away","home"):
 		return None
 	
-	try:
-		pitcher = g.find(ah + "_probable_pitcher")
-		pstr = pitcher.get("name_display_roster")
-	except:
-		return None
-	if "," in pstr:
-		pstr = pstr + "."
-	if pstr == "":
+	if "probablePitcher" not in g["teams"][ah].keys():
 		pstr = "TBA"
 	else:
-		pstr = pstr + " " + pitcher.get("wins") + "-" + pitcher.get("losses") + ", " + pitcher.get("era")
-	return (g.get(ah + "_team_city") + " (" + pstr + ")")
-	
+		pitcher = g["teams"][ah]["probablePitcher"]
+		pstr = pitcher["fullName"]
+		# this was for a rostername of "Soroka, M", which we don't have yet in SAPI 
+		# have to get that as (http://statsapi.mlb.com + pitcher["link"])["people"][0]["boxscoreName"]
+		#if "," in pstr:
+		#	pstr = pstr + "."
+		pstr = pstr + " " + getWLERA(pitcher)
+	return (g["teams"][ah]["team"]["shortName"] + " (" + pstr + ")")
+
+def getWLERA(pitcher):
+	for sg in pitcher["stats"]:
+		if sg["group"]["displayName"] == "pitching" and sg["type"]["displayName"] == "statsSingleSeason":
+			return str(sg["stats"]["wins"]) + "-" + str(sg["stats"]["losses"]) + ", " + sg["stats"]["era"]
+	return ""	
 
 def getProbables(g,tvTeam=None):
 	if g == None:
 		return None
 	
-	awayAbbr = g.attrib["away_name_abbrev"]
-	homeAbbr = g.attrib["home_name_abbrev"]
+	awayAbbr = g["teams"]["away"]["team"]["abbreviation"]
+	homeAbbr = g["teams"]["home"]["team"]["abbreviation"]
 	
 	runningStr = getPitcher(g,"away") + " at " + getPitcher(g,"home")
 	
 	if is_doubleheader(g):
-		runningStr += ' (game ' + str(g.attrib["game_nbr"]) + ')'
+		runningStr += ' (game ' + str(g["gameNumber"]) + ')'
 	
-	runningStr += " starts at " + g.attrib["time"] + " " + g.attrib["time_zone"] + "."
+	#runningStr += " starts at " + g.attrib["time"] + " " + g.attrib["time_zone"] + "."
+	runningStr += " starts at " + g["gameDate"] + "."
 	
 	if tvTeam and (tvTeam not in ("suppress","scoreboard","schedule")):
 		# lazy default here
