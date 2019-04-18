@@ -3,7 +3,6 @@
 import urllib2, json, traceback # ConfigParser, argparse	     #, logging
 from datetime import timedelta, datetime, date
 from string import join
-import xml.etree.ElementTree as ET
 from os import sys
 
 from nat_lib import *
@@ -14,12 +13,20 @@ intRolloverLocalTime = 1000		# for resetter this is UTC because Lambda runs in U
 #logLevel = logging.DEBUG
 #logFN = "resetter.log"
 
-def findGameNodes(msTree,team):
+def findGameNodes(sapiDict,team):
+	ret = []
+
 	if team.lower() in ("schedule","scoreboard"):
-		ret = msTree.getroot().findall("./game")
-		return ret
+		for sapiDate in sapiDict["dates"]:
+			ret = ret + sapiDate["games"]
 	else:
-		return (msTree.getroot().findall("./game[@away_name_abbrev='" + team + "']") + msTree.getroot().findall("./game[@home_name_abbrev='" + team + "']"))
+		for sapiDate in sapiDict["dates"]:
+			for gm in sapiDate["games"]:
+				if ((gm["teams"]["home"]["team"]["abbreviation"] == team) or (gm["teams"]["away"]["team"]["abbreviation"] == team)):
+					ret.append(gm)
+	
+	#print "I was called for " + team + " and I'm returning " + str(len(ret)) + " values"
+	return ret
 
 
 def buildVarsToCode():
@@ -145,15 +152,15 @@ def getReset(g,team,fluidVerbose):
 	return reset
 	
 	
-def loadMasterScoreboard(msURL,scheduleDT):
+def loadSAPIScoreboard(sapiURL, scheduleDT):
 	
 	#logging.debug( "Running scoreboard for " + scheduleDT.strftime("%Y-%m-%d"))
-	scheduleUrl = scheduleDT.strftime(msURL)
+	scheduleUrl = scheduleDT.strftime(sapiURL)
 	
 	try:
 		usock = urllib2.urlopen(scheduleUrl,timeout=10)
-		msTree = ET.parse(usock)
-		return msTree
+		sapiDict = json.load(usock)
+		return sapiDict
 
 	#except socket.timeout as e:
 	except urllib2.HTTPError as e:
@@ -222,6 +229,7 @@ def launch(team,fluidVerbose=True,rewind=False,ffwd=False):
 	
 	localRollover = intRolloverLocalTime
 	
+	# for testing
 	if rewind:
 		# force yesterday's games by making the rollover absurd.
 		localRollover += 2400
@@ -240,13 +248,11 @@ def launch(team,fluidVerbose=True,rewind=False,ffwd=False):
 		raise NoTeamException
 	
 	todayDT = datetime.now() - timedelta(minutes=((localRollover/100)*60+(localRollover%100)))
-	todayStr = todayDT.strftime("%Y-%m-%d")
-
-	masterScoreboardUrl = leagueAgnosticMasterScoreboardUrl.replace("LEAGUEBLOCK","mlb")
-	masterScoreboardTree = loadMasterScoreboard(masterScoreboardUrl,todayDT)
 	
-	if masterScoreboardTree:
-		gns = findGameNodes(masterScoreboardTree,vtoc[team])
+	sapiScoreboard = loadSAPIScoreboard(statsApiScheduleUrl,todayDT)
+	
+	if sapiScoreboard:
+		gns = findGameNodes(sapiScoreboard,vtoc[team])
 	else:
 		gns = []
 	
