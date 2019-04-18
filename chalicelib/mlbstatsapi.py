@@ -46,23 +46,25 @@ def buildVarsToCode():
 
 def placeAndScore(g):
 
-	loc = g.get("location").split(",")[0]
-	if not loc:
-		reset = "at " + g.get("venue") 
-	elif loc == "Bronx":
-		reset = "in the Bronx"
+	homeVenue = g["teams"]["home"]["team"]["venue"]["name"]
+	gameVenue = g["venue"]["name"]
+	
+	if gameVenue != homeVenue:
+		reset = "at " + gameVenue
 	else:
-		reset = "in " + loc
+		reset = "in " + g["teams"]["home"]["team"]["locationName"]
+		if reset == "Bronx":
+			reset = "in the Bronx"
 
 	reset +=  ", "
 	
 	# score
-	hruns = g.find("linescore/r").attrib["home"]
-	aruns = g.find("linescore/r").attrib["away"]
-	if int(hruns) > int(aruns):
-		reset += (g.attrib["home_team_name"] + " " + hruns + ", " + g.attrib["away_team_name"] + " " + aruns)
+	hruns = g["linescore"]["teams"]["home"]["runs"]
+	aruns = g["linescore"]["teams"]["away"]["runs"]
+	if hruns > aruns:
+		reset += (g["teams"]["home"]["team"]["teamName"] + " " + str(hruns) + ", " + g["teams"]["away"]["team"]["teamName"] + " " + str(aruns))
 	else:
-		reset += (g.attrib["away_team_name"] + " " + aruns + ", " + g.attrib["home_team_name"] + " " + hruns)
+		reset += (g["teams"]["away"]["team"]["teamName"] + " " + str(aruns) + ", " + g["teams"]["home"]["team"]["teamName"] + " " + str(hruns))
 	
 	return reset
 
@@ -83,21 +85,22 @@ def getReset(g,team,fluidVerbose):
 		if fluidVerbose:
 			reset += getProbables(g,team)
 		else:
-			reset += g.attrib["away_team_name"] + " at " + g.attrib["home_team_name"]
+			reset += g["teams"]["away"]["team"]["teamName"] + " at " + g["teams"]["home"]["team"]["teamName"]
 			if is_dh:
-				reset += ' (game ' + str(g.attrib["game_nbr"]) + ')'
-			reset += " starts at " + g.attrib["time"] + " " + g.attrib["time_zone"] + "."
+				reset += ' (game ' + str(g["gameNumber"]) + ')'
+			reset += " starts at " + g["gameDate"] 
+			#g.attrib["time"] + " " + g.attrib["time_zone"] + "." gonna have to either figure this out from ISO8601 or find the necessary hydrate
 		if stat in ANNOUNCE_STATUS_CODES:	# delayed start
 			reset = reset[:-1] + " (" + stat.lower() + ")."
 	
 	if stat in UNDERWAY_STATUS_CODES:
 		
-		inningState = statNode.get("inning_state").lower()
-		reset = placeAndScore(g) + ", " + inningState + " of the " + divOrdinal(statNode.get("inning")) + ". "
+		inningState = g["linescore"]["inningState"].lower()
+		reset = placeAndScore(g) + ", " + inningState + " of the " + g["linescore"]["currentInningOrdinal"] + ". "
 		
 		# might have at, might have in as the front.		
 		if is_dh:
-			reset = "Game " + g.get("game_nbr") + " " + reset
+			reset = "Game " +str(g["gameNumber"]) + " " + reset
 		else:
 			reset = reset[0].upper() + reset[1:]
 						
@@ -110,10 +113,10 @@ def getReset(g,team,fluidVerbose):
 						"5": "Runners on first and third. ",
 						"6": "Runners on second and third. ",
 				 		"7": "Bases loaded. "}
-			onBaseStatus = g.find("runners_on_base").attrib["status"]
-			reset += obstrs[onBaseStatus]
+			#onBaseStatus = g.find("runners_on_base").attrib["status"]
+			#reset += obstrs[onBaseStatus]
 			
-			outs = statNode.get("o")
+			outs = str(g["linescore"]["outs"])
 			if outs == "0":
 				reset += "No outs. "
 			elif outs == "1":
@@ -124,14 +127,16 @@ def getReset(g,team,fluidVerbose):
 	if stat in FINAL_STATUS_CODES:
 		reset += "Final "
 		if is_dh:
-			reset += "of game " + g.get("game_nbr") + " "
+			reset += "of game " + str(g["gameNumber"]) + " "
 		reset += placeAndScore(g)
-		if (int(statNode.get("inning")) != 9):
-			reset += " in " + statNode.get("inning") + " innings"
+		if (g["linescore"]["currentInning"] != 9):
+			reset += " in " + str(g["linescore"]["currentInning"]) + " innings"
 		reset += ". "
+		
 	
 	if (len(reset) == 0):
 		# give up
+		print "I gave up! doing len(reset) == 0 path with status " + stat
 		reset = g.attrib["away_team_name"] + " at " + g.attrib["home_team_name"] 
 		if is_dh:
 			reset += ' (game ' + str(g.attrib["game_nbr"]) + ')'
@@ -146,7 +151,8 @@ def getReset(g,team,fluidVerbose):
 				pass
 		
 		reset += "."
-		
+	
+	#print "getting out of the reset with " + reset
 	return reset
 	
 	
@@ -264,6 +270,7 @@ def launch(team,fluidVerbose=True,rewind=False,ffwd=False):
 	rv = []
 	for gn in gns:
 		rv.append(getReset(gn,vtoc[team],fluidVerbose))
+		#print "rv is " + str(rv)
 	
 	return rv
 
