@@ -105,16 +105,28 @@ def getReset(g,team,fluidVerbose):
 			reset = reset[0].upper() + reset[1:]
 						
 		if inningState in ("top","bottom"): 	#in play
-			obstrs = { "0": "",	# don't need to say anything
-						"1": "Runner on first. ",
-						"2": "Runner on second. ",
-						"3": "Runner on third. ",
-						"4": "Runners on first and second. ",
-						"5": "Runners on first and third. ",
-						"6": "Runners on second and third. ",
-				 		"7": "Bases loaded. "}
-			#onBaseStatus = g.find("runners_on_base").attrib["status"]
-			#reset += obstrs[onBaseStatus]
+			
+			runners = g["linescore"]["offense"].keys()		
+			if "first" in runners:
+				if "second" in runners:
+					if "third" in runners:
+						reset += "Bases loaded. "
+					else:
+						reset += "Runners on first and second. "
+				elif "third" in runners:
+					reset += "Runners on first and third. "
+				else:
+					reset += "Runner on first. "
+			elif "second" in runners:
+				if "third" in runners:
+					reset += "Runners on second and third. "
+				else:
+					reset += "Runner on second. "
+			elif "third" in runners:
+				reset += "Runner on third. "
+			else:
+				if len(runners) != 0:
+					print "uh, we broke runners somehow"
 			
 			outs = str(g["linescore"]["outs"])
 			if outs == "0":
