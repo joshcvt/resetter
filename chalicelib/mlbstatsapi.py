@@ -209,7 +209,17 @@ def getWLERA(pitcher):
 	for sg in pitcher["stats"]:
 		if sg["group"]["displayName"] == "pitching" and sg["type"]["displayName"] == "statsSingleSeason":
 			return str(sg["stats"]["wins"]) + "-" + str(sg["stats"]["losses"]) + ", " + sg["stats"]["era"]
-	return ""	
+	return ""
+
+def getTVNets(g,ah):
+	ret = []
+	for bc in g["broadcasts"]:
+		if bc["type"] == "TV":
+			if (("isNational" in bc.keys()) or (bc["homeAway"] == ah)):
+				name = bc["name"]
+				if name not in ret:
+					ret.append(name)
+	return join(ret,", ")
 
 def getProbables(g,tvTeam=None):
 	if g == None:
@@ -228,11 +238,11 @@ def getProbables(g,tvTeam=None):
 	
 	if tvTeam and (tvTeam not in ("suppress","scoreboard","schedule")):
 		# lazy default here
-		bc = "home"
+		homeaway = "home"
 		if tvTeam == awayAbbr:
-			bc = "away"
+			homeaway = "away"
 		try:
-			bcast = g.find("broadcast").find(bc).find("tv").text
+			bcast = getTVNets(g,homeaway)
 			if bcast:
 				runningStr += " TV broadcast is on " + bcast + "."
 			else:
