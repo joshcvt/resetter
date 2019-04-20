@@ -147,16 +147,15 @@ def getReset(g,team,fluidVerbose):
 		
 	
 	if (len(reset) == 0):
-		# give up
-		print "I gave up! doing len(reset) == 0 path with status " + stat
-		reset = g.attrib["away_team_name"] + " at " + g.attrib["home_team_name"] 
+		# common path for various weird statuses with a specific cutout for postponed
+		reset = g["teams"]["away"]["team"]["teamName"] + " at " + g["teams"]["home"]["team"]["teamName"] 
 		if is_dh:
-			reset += ' (game ' + str(g.attrib["game_nbr"]) + ')'
+			reset += ' (game ' + str(g["gameNumber"]) + ')'
 		reset += " is " + stat.lower() 
 		
 		if stat in POSTPONED_STATUS_CODES:
 			try:
-				desc = g.attrib["description"]
+				desc = g["description"]
 				if desc and len(desc.strip()) > 0:
 					reset += " (" + desc + ")"
 			except:
