@@ -12,7 +12,8 @@ teamDirectoryUrl = leagueAgnosticTeamDirectoryUrl.replace("{league}","mlb")
 leagueAgnosticMasterScoreboardUrl = "http://gd2.mlb.com/components/game/LEAGUEBLOCK/year_%Y/month_%m/day_%d/master_scoreboard.xml"
 validLeagues = ["mlb","aaa","aax","afa","afx","asx","rok"] # in descending order
 
-statsApiScheduleUrl = "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=%Y-%m-%d&leagueId=103,104&hydrate=team,linescore,flags,liveLookin,review,game(content(summary,media(epg)),tickets),seriesStatus(useOverride=true),broadcasts(all)&useLatestGames=false&language=en"
+statsApiScheduleUrl = "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=%Y-%m-%d&leagueId=103,104&hydrate=team,linescore(runners),probablePitcher,stats,game(content(summary,media(epg)),tickets),broadcasts(all)&useLatestGames=false&language=en"
+# other things we can hydrate in: flags,liveLookin,review,seriesStatus(useOverride=true),person,stats,probablePitcher
 
 # doesn't exist until the game starts
 mobileHighlightsUrl = "http://gd2.mlb.com${game_data_directory}/media/mobile.xml" 
@@ -36,7 +37,7 @@ gameTimeLocalTBAPlaceholder = "3:33:00 AM"
 # in mobile.xml, get home tz timecode from <media><keywords><keyword type="sv_id" value="160430_132609"/> ET.CT.MT.MST.PT; can infer UTC diff via msxml: <game time_date_hm_lg="2016/04/30 8:10" time_zone_hm_lg="-4" home_time="5:10" 
 
 INACTIVE_GAME_STATUS_CODES = ["Postponed", "Pre-Game", "Preview", "Warmup"]
-PREGAME_STATUS_CODES = ["Pre-Game", "Preview", "Warmup", "Delayed Start"]
+PREGAME_STATUS_CODES = ["Pre-Game", "Preview", "Warmup", "Delayed Start","Scheduled"]
 UPCOMING_STATUS_CODES = ["Pre-Game", "Warmup"]
 UNDERWAY_STATUS_CODES = ["In Progress", "Manager Challenge", "Review"]
 FINAL_STATUS_CODES = ["Final", "Game Over", "Completed Early", "Completed Early: Rain"]
