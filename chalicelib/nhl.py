@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 #encoding: utf-8
 
-import urllib2, json, time
+import urllib.request, urllib.error, urllib.parse, json, time
 from datetime import datetime, timedelta
-from reset_lib import joinOr, sentenceCap, NoGameException, NoTeamException, DabException
+from .reset_lib import joinOr, sentenceCap, NoGameException, NoTeamException, DabException
 from string import capwords
 
 intRolloverUtcTime = 1000
@@ -22,17 +22,17 @@ dabBacks = {
 	"ny":["Rangers","Islanders"]
 }
 
-derefs = { "rangers":["nyr","blueshirts"],"islanders":["isles","nyi","brooklyn"],"capitals":["caps","nocups","no cups","was","washington","dc"],
+derefs = { "rangers":["nyr","blueshirts"],"islanders":["isles","nyi","brooklyn"],"capitals":["caps","was","washington","dc"],
 	"flyers":["philly","phl","philadelphia"],"penguins":["pens","pittsburgh","pit","pgh"],"blue jackets":["bluejackets","lumbus","cbj","bjs","bj's","columbus"],
-	"hurricanes":["carolina","canes","car","whale","whalers","hartford","brass bonanza"],"devils":["nj","njd","jersey","devs","new jersey"],
+	"hurricanes":["carolina","canes","car","jerks","whale","whalers","hartford","brass bonanza"],"devils":["nj","njd","jersey","devs","new jersey"],
 	"red wings":["wings","det","detroit"],"sabres":["buffalo","buf"],"maple leafs":["leafs","buds","toronto","tor"],
-	"senators":["sens","ottawa"],"canadiens":["habs","montreal",u'montréal'],"bruins":["b's","bs","boston"],
+	"senators":["sens","ottawa"],"canadiens":["habs","montreal",'montréal'],"bruins":["b's","bs","boston"],
 	"panthers":["florida",'cats',"fla"],"lightning":["bolts","tb","tampa","tampa bay"],
 	"predators":["preds","nashville","nsh","perds"],"blackhawks":['chi',"chicago",'hawks'],"blues":['stl',"st. louis","st louis"],"wild":['min',"minnesota"],
 	"jets":["no parks","peg","winnipeg"],"stars":["dallas","northstars","north stars"],
 	"avalanche":['avs','col','colorado'],
 	"oilers":['edm','oil',"edmonton"],"flames":['cgy','calgary'],"canucks":['nucks','van','vancouver'],
-	"sharks":['sj','san jose',u'san josé'],"kings":['la','lak',"los angeles"],"ducks":['ana','anaheim','mighty ducks'],
+	"sharks":['sj','san jose','san josé'],"kings":['la','lak',"los angeles"],"ducks":['ana','anaheim','mighty ducks'],
 	"coyotes":['phx','ari','arizona','yotes',"phoenix"],"golden knights":['vegas','lv','knights',"vgk","las vegas"]
 }
 
@@ -99,7 +99,7 @@ def get_scoreboard(file=None,fluidVerbose=False,rewind=False,ffwd=False):
 		#opener = urllib2.build_opener()
 		#opener.addheaders = [('User-agent', 'Mozilla/5.0')]
 		#urllib2.install_opener(opener)
-		fh = urllib2.urlopen(todayScoreboardUrl)	
+		fh = urllib.request.urlopen(todayScoreboardUrl)	
 	
 	raw = fh.read()
 	return json.loads(raw)
@@ -121,7 +121,7 @@ def get_game(sb,nickname):
 	except IndexError:
 		pass	# no games today
 	except Exception as e:
-		print "game get blew out on something not IndexError: " + str(e)
+		print("game get blew out on something not IndexError: " + str(e))
 	
 	return g
 		
@@ -138,7 +138,7 @@ def game_loc(game):
 
 def teamDisplayName(team):
 	"""we have this because Montreal venue/Montréal teamloc and St. Louis venue/St Louis shortname looks dumb."""
-	overrides = {u'Montréal':'Montreal','St Louis':'St. Louis'}
+	overrides = {'Montréal':'Montreal','St Louis':'St. Louis'}
 	sname = team["team"]["shortName"]
 	if sname in overrides:
 		return overrides[sname]
@@ -207,8 +207,8 @@ def game_time_set(game):
 			if pd in ("1st","2nd"):
 				return "at the " + pd + " intermission"
 			else:
-				print "intermission but it's overtime/so, LOOK AT THIS"
-				print json.dumps(game,sort_keys=True, indent=4, separators=(',', ': '))
+				print("intermission but it's overtime/so, LOOK AT THIS")
+				print(json.dumps(game,sort_keys=True, indent=4, separators=(',', ': ')))
 				return "at the " + pd + " intermission"
 		else:
 			if pd == "OT":
@@ -233,7 +233,7 @@ def final_qualifier(game):
 	elif game["linescore"]["currentPeriodOrdinal"] == "SO":
 		return " in a shootout"
 	elif game["linescore"]["currentPeriod"] > 3:
-		print "this is weird: period is " + game["linescore"]["currentPeriodOrdinal"]
+		print("this is weird: period is " + game["linescore"]["currentPeriodOrdinal"])
 		return " in " + game["linescore"]["currentPeriodOrdinal"]
 	else:
 		return ""
@@ -318,7 +318,7 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
 		except IndexError:
 			game = []
 		except Exception as e:		# keyerror or index error means scoreboard is blown out
-			print "full scoreboard get blew out, not IndexError\n" + str(e)	# for logging
+			print("full scoreboard get blew out, not IndexError\n" + str(e))	# for logging
 			game = []
 	
 	else:

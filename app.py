@@ -24,7 +24,7 @@ def index():
 	except:
 		pass
 
-	print "getting for team " + team
+	print("getting for team " + team)
 	rtext = get_team(team)
 	
 	return { "response_type": "in_channel", "text": rtext }

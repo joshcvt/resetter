@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-from string import join, capwords
+from string import capwords
 
-from mlb import launch as get_mlb
-from ncaaf_ncaa import get as get_ncaaf
-from nhl import get as get_nhl
-from reset_lib import joinOr, NoGameException, NoTeamException, DabException
+from .mlb import launch as get_mlb
+#from .ncaaf_ncaa import get as get_ncaaf
+from .nhl import get as get_nhl
+from .reset_lib import joinOr, NoGameException, NoTeamException, DabException
 
 def get_team(team,debug=False):
 
@@ -13,13 +13,14 @@ def get_team(team,debug=False):
 	retList = None
 	opts = []
 		
-	fns = {"mlb":get_mlb,"football":get_ncaaf,"nhl":get_nhl}
+	#fns = {"mlb":get_mlb,"football":get_ncaaf,"nhl":get_nhl}
+	fns = {"mlb":get_mlb,"nhl":get_nhl}
 	
 	# first, try if the sport's defined.
 	try:
 		(team,sport) = sport_strip(team)
 		if debug:
-			print "got " + team + ", " + sport
+			print("got " + team + ", " + sport)
 		if sport in fns:
 			try:
 				rv = fns[sport](team)
@@ -30,7 +31,7 @@ def get_team(team,debug=False):
 			#except NoTeamException as e:
 			#	hold = "No team " + tm + " found."
 			except Exception as e:
-				print "got exception: " + e.__class__.__name__ + " " + str(e)
+				print("got exception: " + e.__class__.__name__ + " " + str(e))
 				hold = e
 	
 	# if it isn't:
@@ -38,7 +39,7 @@ def get_team(team,debug=False):
 		
 		for k in fns:
 			if debug:
-				print "calling " + k,
+				print("calling " + k, end=' ')
 			
 			try:
 				rv = fns[k](team)
@@ -46,7 +47,7 @@ def get_team(team,debug=False):
 					return rtext(rv)
 			except Exception as e:
 				if debug:
-					print e.__class__.__name__,
+					print(e.__class__.__name__, end=' ')
 				
 				if isinstance(e,NoTeamException) and not isinstance(hold,NoGameException): 
 					# don't override an NGE.
@@ -95,16 +96,17 @@ def sport_strip(team):
 	"""If sport is specified either first or last, return team plus it as a tuple. If not, throw Exception."""
 	line = team.strip().lower()
 	
-	if line.endswith("football"):
-		return (team[:-8].strip(),"football")
-	elif line.startswith("football "):
-		return (team[9:].strip(),"football")
-	elif line.endswith("hockey"):
+	#if line.endswith("football"):
+	#	return (team[:-8].strip(),"football")
+	#elif line.startswith("football "):
+	#	return (team[9:].strip(),"football")
+	#elif line.endswith("hockey"):
+	if line.endswith("hockey"):
 		return (team[:-6].strip(),"nhl")
 	elif line.startswith("hockey "):
 		return (team[7:].strip(),"nhl")
 	elif line.endswith("nhl"):
-		print "did dis"
+		print("did dis")
 		return (team[:-3].strip(), "nhl")
 	elif line.startswith("nhl "):
 		return (team[4:].strip(), "nhl")
