@@ -1,12 +1,11 @@
 #!/usr/bin/python
 
-import urllib2, json, traceback 
+import urllib.request, urllib.error, urllib.parse, json, traceback 
 from datetime import timedelta, datetime, date
-from string import join
 from os import sys
 
-from nat_lib import *
-from reset_lib import NoGameException, NoTeamException, DabException
+from .nat_lib import *
+from .reset_lib import NoGameException, NoTeamException, DabException
 
 intRolloverLocalTime = 1000		# for resetter this is UTC because Lambda runs in UTC
 
@@ -106,7 +105,7 @@ def getReset(g,team,fluidVerbose):
 						
 		if inningState in ("top","bottom"): 	#in play
 			
-			runners = g["linescore"]["offense"].keys()		
+			runners = list(g["linescore"]["offense"].keys())		
 			if "first" in runners:
 				if "second" in runners:
 					if "third" in runners:
@@ -126,7 +125,7 @@ def getReset(g,team,fluidVerbose):
 				reset += "Runner on third. "
 			else:
 				if len(runners) != 0:
-					print "uh, we broke runners somehow"
+					print("uh, we broke runners somehow")
 			
 			outs = str(g["linescore"]["outs"])
 			if outs == "0":
@@ -173,18 +172,18 @@ def loadSAPIScoreboard(sapiURL, scheduleDT):
 	scheduleUrl = scheduleDT.strftime(sapiURL)
 	
 	try:
-		usock = urllib2.urlopen(scheduleUrl,timeout=10)
+		usock = urllib.request.urlopen(scheduleUrl,timeout=10)
 		sapiDict = json.load(usock)
 		return sapiDict
 
 	#except socket.timeout as e:
-	except urllib2.HTTPError as e:
-		print "HTTP " + str(e.code) + " on URL: " + scheduleUrl
+	except urllib.error.HTTPError as e:
+		print("HTTP " + str(e.code) + " on URL: " + scheduleUrl)
 		#if e.code in (404,403,500,410):
 		#elif e.code != 200:
 	#except urllib2.URLError as e:
 	except Exception as e:
-		print "WENT WRONG: " + e.__module__ + "." + e.__class__.__name__
+		print("WENT WRONG: " + e.__module__ + "." + e.__class__.__name__)
 	
 	return None
 
@@ -192,7 +191,7 @@ def getPitcher(g,ah):
 	if ah not in ("away","home"):
 		return None
 	
-	if "probablePitcher" not in g["teams"][ah].keys():
+	if "probablePitcher" not in list(g["teams"][ah].keys()):
 		pstr = "TBA"
 	else:
 		pitcher = g["teams"][ah]["probablePitcher"]
@@ -214,7 +213,7 @@ def getTVNets(g,ah):
 	ret = []
 	for bc in g["broadcasts"]:
 		if bc["type"] == "TV":
-			if (("isNational" in bc.keys()) or (bc["homeAway"] == ah)):
+			if (("isNational" in list(bc.keys())) or (bc["homeAway"] == ah)):
 				name = bc["name"]
 				if name not in ret:
 					ret.append(name)
@@ -246,8 +245,8 @@ def getProbables(g,tvTeam=None):
 				runningStr += " TV broadcast is on " + bcast + "."
 			else:
 				runningStr += " No TV."
-		except Exception, e:
-			print "bcast exception:" + str(e)
+		except Exception as e:
+			print("bcast exception:" + str(e))
 			pass	
 	
 	return runningStr
