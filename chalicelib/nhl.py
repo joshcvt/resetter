@@ -99,7 +99,7 @@ def get_scoreboard(file=None,fluidVerbose=False,rewind=False,ffwd=False):
         #opener = urllib2.build_opener()
         #opener.addheaders = [('User-agent', 'Mozilla/5.0')]
         #urllib2.install_opener(opener)
-        fh = urllib2.urlopen(todayScoreboardUrl)    
+        fh = urllib2.urlopen(todayScoreboardUrl)
     
     raw = fh.read()
     return json.loads(raw)
@@ -129,7 +129,7 @@ def get_game(sb,nickname):
 def game_loc(game):
 
     try:
-        if game["venue"]["name"].strip() == game["teams"]["home"]["team"]["venue"]["name"].strip():
+        if game["venue"]["name"].strip().lower() == game["teams"]["home"]["team"]["venue"]["name"].strip().lower():
             return "in " + game["teams"]["home"]["team"]["venue"]["city"].strip()
     except:
         pass
