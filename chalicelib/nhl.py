@@ -284,6 +284,20 @@ def phrase_game(game):
     elif status in (5,6,7):    # final, game over
         # final
         return "Final " + game_loc(game) + ", " + scoreline(game) + final_qualifier(game) + "."
+        
+    elif (status == 9): # postponed
+        ret = teamDisplayName(game["teams"]["away"])
+        loc = game_loc(game)
+        if loc.startswith("at"):
+            ret += " vs. "
+        else:
+            ret += " at "
+        ret += teamDisplayName(game["teams"]["home"])
+        if loc.startswith("at"):
+            ret += " " + game_loc(game)
+        ret += " is postponed."
+        return ret
+        
     else:
         return "HELP, I don't understand gamestatus " + str(status) + " " + game["status"]["detailedState"] + " yet for " + game["teams"]["away"]["team"]["teamName"] + " at " + game["teams"]["home"]["team"]["teamName"]
     
