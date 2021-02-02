@@ -131,6 +131,10 @@ def game_loc(game):
     try:
         if game["venue"]["name"].strip().lower() == game["teams"]["home"]["team"]["venue"]["name"].strip().lower():
             return "in " + game["teams"]["home"]["team"]["venue"]["city"].strip()
+        
+        # #9: special case if they enter one in French and the other in English. These are the times that try software developers' souls.
+        elif (((game["venue"]["name"].strip().lower() == "centre bell") and (game["teams"]["home"]["team"]["venue"]["name"].strip().lower() == "bell centre")) or ((game["venue"]["name"].strip().lower() == "bell centre") and (game["teams"]["home"]["team"]["venue"]["name"].strip().lower() == "centre bell"))):
+            return "in Montreal"    # they also put the utf-8 character in this field, which freaks out Python 2. to fix when we go to 3.
     except:
         pass
     
