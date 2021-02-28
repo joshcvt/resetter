@@ -1,7 +1,9 @@
 #!/usr/bin/python
 
 import urllib.request, urllib.error, urllib.parse, json, traceback 
-from datetime import timedelta, datetime, date
+from datetime import timedelta, datetime, date, timezone
+import dateutil.parser
+from zoneinfo import ZoneInfo
 from os import sys
 
 from .nat_lib import *
@@ -11,6 +13,12 @@ intRolloverLocalTime = 1000		# for resetter this is UTC because Lambda runs in U
 
 #logLevel = logging.DEBUG
 #logFN = "resetter.log"
+
+def iso8601toLocalTZ(isoUTC,preferredTZName="America/New_York"):
+
+	gameTime = dateutil.parser.parse(isoUTC)
+	localGameTime = gameTime.replace(tzinfo=timezone.utc).astimezone(ZoneInfo(preferredTZName))
+	return localGameTime.strftime("%-I:%M ") + localGameTime.tzname()
 
 def findGameNodes(sapiDict,team):
 	ret = []
@@ -87,8 +95,8 @@ def getReset(g,team,fluidVerbose):
 			reset += g["teams"]["away"]["team"]["teamName"] + " at " + g["teams"]["home"]["team"]["teamName"]
 			if is_dh:
 				reset += ' (game ' + str(g["gameNumber"]) + ')'
-			reset += " starts at " + g["gameDate"] 
-			#g.attrib["time"] + " " + g.attrib["time_zone"] + "." gonna have to either figure this out from ISO8601 or find the necessary hydrate
+			reset += " starts at " + iso8601toLocalTZ(g["gameDate"]) + "."
+
 		if stat in ANNOUNCE_STATUS_CODES:	# delayed start
 			reset = reset[:-1] + " (" + stat.lower() + ")."
 	
@@ -219,7 +227,7 @@ def getTVNets(g,ah):
 					ret.append(name)
 	return ",".join(ret)
 
-def getProbables(g,tvTeam=None):
+def getProbables(g,tvTeam=None,preferredTZ="America/New_York"):
 	if g == None:
 		return None
 	
@@ -231,8 +239,7 @@ def getProbables(g,tvTeam=None):
 	if is_doubleheader(g):
 		runningStr += ' (game ' + str(g["gameNumber"]) + ')'
 	
-	#runningStr += " starts at " + g.attrib["time"] + " " + g.attrib["time_zone"] + "."
-	runningStr += " starts at " + g["gameDate"] + "."
+	runningStr += " starts at " + iso8601toLocalTZ(g["gameDate"]) + "."
 	
 	if tvTeam and (tvTeam not in ("suppress","scoreboard","schedule")):
 		# lazy default here
