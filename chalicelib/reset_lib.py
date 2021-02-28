@@ -4,11 +4,11 @@ def joinOr(li):
 	if li.__class__ != list:
 		raise Exception
 	if len(li) < 2:
-		return join(li,",")
+		return ",".join(li)
 	elif len(li) == 2:
-		return join(li," or ")
+		return " or ".join(li)
 	else:
-		commas = join(li[:-2],", ")
+		commas = ", ".join(li[:-2])
 		return commas + ", " + li[-2] + ", or " + li[-1]
 
 def sentenceCap(sen):
