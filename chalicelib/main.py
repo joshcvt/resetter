@@ -2,7 +2,7 @@
 
 from string import capwords
 
-from .mlb import launch as get_mlb
+from .mlbstatsapi import launch as get_mlb
 #from .ncaaf_ncaa import get as get_ncaaf
 from .nhl import get as get_nhl
 from .reset_lib import joinOr, NoGameException, NoTeamException, DabException
@@ -85,9 +85,9 @@ def rtext(retList):
 		retList = [retList]
 	
 	if len(retList) > 1:
-		rtext = join(retList,'\n')
+		rtext = '\n'.join(retList)
 	else:
-		rtext = join(retList," ")
+		rtext = " ".join(retList)
 	
 	return rtext
 
