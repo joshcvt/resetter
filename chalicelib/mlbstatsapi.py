@@ -217,7 +217,7 @@ def getTVNets(g,ah):
 				name = bc["name"]
 				if name not in ret:
 					ret.append(name)
-	return join(ret,", ")
+	return ",".join(ret)
 
 def getProbables(g,tvTeam=None):
 	if g == None:
