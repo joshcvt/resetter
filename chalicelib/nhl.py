@@ -99,11 +99,7 @@ def get_scoreboard(file=None,fluidVerbose=False,rewind=False,ffwd=False):
         #opener = urllib2.build_opener()
         #opener.addheaders = [('User-agent', 'Mozilla/5.0')]
         #urllib2.install_opener(opener)
-<<<<<<< HEAD
         fh = urllib.request.urlopen(todayScoreboardUrl)    
-=======
-        fh = urllib2.urlopen(todayScoreboardUrl)
->>>>>>> 3168abd... NHL: compare arena name insensitive, thanks AMALIE/Amalie Arena
     
     raw = fh.read()
     return json.loads(raw)
