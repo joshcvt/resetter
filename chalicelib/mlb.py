@@ -6,8 +6,8 @@ from string import join
 import xml.etree.ElementTree as ET
 from os import sys
 
-from nat_lib import *
-from reset_lib import NoGameException, NoTeamException, DabException
+from .nat_lib import *
+from .reset_lib import NoGameException, NoTeamException, DabException
 
 intRolloverLocalTime = 1000		# for resetter this is UTC because Lambda runs in UTC
 
@@ -157,12 +157,12 @@ def loadMasterScoreboard(msURL,scheduleDT):
 
 	#except socket.timeout as e:
 	except urllib2.HTTPError as e:
-		print "HTTP " + str(e.code) + " on URL: " + scheduleUrl
+		print( "HTTP " + str(e.code) + " on URL: " + scheduleUrl)
 		#if e.code in (404,403,500,410):
 		#elif e.code != 200:
 	#except urllib2.URLError as e:
 	except Exception as e:
-		print "WENT WRONG: " + e.__module__ + "." + e.__class__.__name__
+		print ("WENT WRONG: " + e.__module__ + "." + e.__class__.__name__)
 	
 	return None
 
@@ -209,8 +209,8 @@ def getProbables(g,tvTeam=None):
 				runningStr += " TV broadcast is on " + bcast + "."
 			else:
 				runningStr += " No TV."
-		except Exception, e:
-			print "bcast exception:" + str(e)
+		except Exception as e:
+			print ("bcast exception:" + str(e))
 			pass	
 	
 	return runningStr
