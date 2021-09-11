@@ -7,4 +7,5 @@
 !.chalice/config.json
 
 samples/
-.vscode/settings.json
+
+.vscode/
