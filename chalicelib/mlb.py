@@ -87,7 +87,8 @@ def getReset(g,team,fluidVerbose):
 	if stat in UNDERWAY_STATUS_CODES:
 		
 		inningState = statNode.get("inning_state").lower()
-		reset = placeAndScore(g) + ", " + inningState + " of the " + divOrdinal(statNode.get("inning")) + ". "
+		inning = statNode.get("inning")
+		reset = placeAndScore(g) + ", " + inningState + " of the " + divOrdinal(inning) + ". "
 		
 		# might have at, might have in as the front.		
 		if is_dh:
@@ -114,8 +115,19 @@ def getReset(g,team,fluidVerbose):
 				reset += outs + " out. "
 			else:
 				reset += outs + " outs. "
+			
+			if int(inning) > 3:
+				is_perfect_game = statNode.get("is_perfect_game").lower().startswith("y")
+				is_no_hitter = statNode.get("is_no_hitter").lower().startswith("y")	
+				if is_perfect_game:
+					reset += "Perfect game in progress. "
+				elif is_no_hitter:
+					reset += "No-hitter in progress. "
 	
 	if stat in FINAL_STATUS_CODES:
+		is_perfect_game = statNode.get("is_perfect_game").lower().startswith("y")
+		is_no_hitter = statNode.get("is_no_hitter").lower().startswith("y")
+	
 		reset += "Final "
 		if is_dh:
 			reset += "of game " + g.get("game_nbr") + " "
@@ -123,6 +135,10 @@ def getReset(g,team,fluidVerbose):
 		if (int(statNode.get("inning")) != 9):
 			reset += " in " + statNode.get("inning") + " innings"
 		reset += ". "
+		if is_perfect_game:
+			reset += "Perfect game. "
+		elif is_no_hitter:
+			reset += "No-hitter. "
 	
 	if (len(reset) == 0):
 		# give up
