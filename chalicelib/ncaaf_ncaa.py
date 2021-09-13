@@ -1,25 +1,26 @@
 #!/usr/bin/env python
 
-import urllib2, json, time
+import urllib.request, urllib.error, urllib.parse, json, traceback, time
 from datetime import datetime, timedelta
-from reset_lib import joinOr, sentenceCap, NoGameException, NoTeamException
-from ncaa_lib import ncaaNickDict, displayOverrides, iaa, validFbSet
+from .reset_lib import joinOr, sentenceCap, NoGameException, NoTeamException
+from .ncaa_lib import ncaaNickDict, displayOverrides, iaa, validFbSet
 
-SCOREBOARD_URL = "http://data.ncaa.com/jsonp/scoreboard/football/fbs/2018/WHAT_WEEK/scoreboard.html?callback=ncaaScoreboard.dispScoreboard"
 
 # these are season (year) specific before/after times in UTC
 # we specify the week1/week2 break because Week 1 is often more than a week. 
 # From this time, though, we can trust that the rest of the weeks are in fact Tuesday-Monday
 # weeks -- even in bowl season, at least in 2016.
-WEEK_1_2_FLIP_UTC = datetime(2018,9,4,16,0)
+WEEK_1_2_FLIP_UTC = datetime(2021,9,7,16,0)
 
 # when, during the season, we go from EDT to EST.
 # correct way to do this is with tzinfo, but I'd like to avoid packaging extra libraries,
 # and we have to manually set the WEEK_1_2_FLIP_UTC value every year anyway.
-DST_FLIP_UTC = datetime(2018,11,4,6,0)
+DST_FLIP_UTC = datetime(2021,10,31,6,0)
 
 # what we expect the API to give us.  EST/EDT, most likely.
 API_TZ_STD_DT = (-5,-4)
+
+SCOREBOARD_URL = "https://data.ncaa.com/casablanca/scoreboard/football/fbs/" + str(WEEK_1_2_FLIP_UTC.year) + "/WHAT_WEEK/scoreboard.json"
 
 __MOD = {}
 
@@ -35,43 +36,43 @@ def get_scoreboard(file=None,iaa=False):
 	"""Get scoreboard from site, or from file if specified for testing."""
 	
 	if not file:
-		opener = urllib2.build_opener()
-		opener.addheaders = [('User-agent', 'Mozilla/5.0')]
-		urllib2.install_opener(opener)
 		week_url = SCOREBOARD_URL.replace("WHAT_WEEK",what_week())
 		if iaa:
 			week_url = week_url.replace("fbs","fcs")
 		try:
-			fh = urllib2.urlopen(week_url)
-		except urllib2.HTTPError as e:
+			fh = urllib.request.urlopen(week_url)
+		except urllib.error.HTTPError as e:
 			if e.code == 404:
 				raise NoGameException("Scoreboard was HTTP 404 Not Found. This probably means the season is over.\n"+week_url)	
 			else:
 				raise e
 	else:
 		fh = open(file)
-	
-	raw = fh.read()
-	# now throw away the function call wrapper
-	js = raw[raw.index('(')+1:raw.rindex(');')]
-	return json.loads(js)
+		
+	json_text = fh.read().decode(encoding='utf-8')
+	return json.loads(json_text)
 
 def find_game(sb,team):
 	"""Passed scoreboard dict and team string, get game."""
-	
-	for day in sb["scoreboard"]:
-		for game in day["games"]:
-			if test_game(game,team):
-				return game
+
+	for game in sb['games']:
+		if test_game(game['game'],team):
+			return game['game']
 
 	return None
 
 def test_game(game,team):
 	"""Broken out so we can test for all kinds of variations once we build the variation list."""
-	return (game["home"]["nameRaw"].strip().lower() == team.lower() or game["away"]["nameRaw"].strip().lower() == team.lower())
-	
+	return (team.lower() in [game["home"]["names"]["short"].lower(),
+							 game["away"]["names"]["short"].lower(),
+							 game["home"]["names"]["char6"].lower(),
+							 game["away"]["names"]["char6"].lower()])
+
 def game_loc(game):
-	sp = game["location"].rsplit(",",2)
+	
+	return "at " + game["home"]["names"]["short"]
+	# TODO TODO TODO TODO TODO TODO game_loc
+	"""sp = game["location"].rsplit(",",2)
 	if len(sp) != 3:
 		# something that definitely isn't stadium, city, state, so just return it all
 		return "at " + game["location"].strip()	
@@ -84,10 +85,13 @@ def game_loc(game):
 		else:
 			# it's something messy, send it all back.
 			return "at " + game["location"].strip()	
-		
+	"""
 
 def rank_name(team):
 	
+	return team['names']['short']
+	# TODO TODO TODO TODO TODO TODO rank_name
+	"""
 	raw = team["nameRaw"].strip()
 	
 	if raw.lower() in displayOverrides:
@@ -99,16 +103,18 @@ def rank_name(team):
 		return pref
 	else:
 		return "#" + team["teamRank"].strip() + " " + pref
+	"""
 
 def scoreline(game):
-	if int(game["home"]["currentScore"]) > int(game["away"]["currentScore"]):
+	# flip home first if they're leading, otherwise away-first convention if it's tied
+	if int(game["home"]["score"]) > int(game["away"]["score"]):
 		gleader = game["home"]
 		gtrailer = game["away"]
 	else:
 		gleader = game["away"]
 		gtrailer = game["home"]
 	
-	return (rank_name(gleader) + " " + gleader["currentScore"].strip() + ", " + rank_name(gtrailer) + " " + gtrailer["currentScore"].strip())
+	return (rank_name(gleader) + " " + gleader["score"].strip() + ", " + rank_name(gtrailer) + " " + gtrailer["score"].strip())
 
 def spaceday(game,sayToday=False):
 	now = datetime.utcnow()
@@ -118,13 +124,13 @@ def spaceday(game,sayToday=False):
 	else:
 		now += timedelta(hours=API_TZ_STD_DT[0])
 	# so now is in ET to compare with the game day.
-	if (now.strftime('%Y-%m-%d') == game['startDate']):
+	if (now.strftime('%d-%m-%Y') == game['startDate']):
 		if sayToday:
 			return ' today'
 		else:
 			return ''
 	else:
-		return ' ' + datetime.strptime(game['startDate'],'%Y-%m-%d').strftime("%A")
+		return ' ' + datetime.strptime(game['startDate'],'%d-%m-%Y').strftime("%A")
 	
 
 def status(game):
@@ -134,8 +140,8 @@ def status(game):
 	
 	elif game["gameState"] == "final":
 		status = "Final " + game_loc(game) + ", " + scoreline(game) 
-		if game["scoreBreakdown"][-1].strip() not in ("1","2","3","4"):
-			status += " in " + game["scoreBreakdown"][-1].strip()
+		if game["finalMessage"].endswith("OT)"):
+			status += game.finalMessage.split()[-1]
 		status += "."
 		
 	elif game["gameState"] == "live":
@@ -167,26 +173,33 @@ def status(game):
 	return sentenceCap(status)
 
 
-def get(team,forceReload=False):
+def get(team,forceReload=False,debug=False):
 	
 	global __MOD
 
 	tkey = team.lower().strip()
 	
 	#sb = get_scoreboard()
+	if debug:
+		print("tkey: " + tkey + ", ", end="")
+	
 	if (tkey in iaa) or (tkey in ncaaNickDict and ncaaNickDict[tkey] in iaa):
-		print "loading I-AA scoreboard from NCAA"
+		if debug: 
+			print ("loading I-AA scoreboard from NCAA")
 		sb = get_scoreboard(iaa=True)
 	elif tkey not in validFbSet:
 		raise NoTeamException
 	else:
 		if forceReload or ("sb" not in __MOD) or (("sbdt" in __MOD) and (datetime.utcnow() - __MOD["sbdt"] > timedelta(minutes=1))):
-			print "loading scoreboard from NCAA"
+			if debug:
+				print ("loading scoreboard from NCAA")
 			__MOD["sb"] = get_scoreboard()
 			__MOD["sbdt"] = datetime.utcnow()
 		else:
-			print "using cached scoreboard"
-			
+			if debug:
+				print ("using cached scoreboard")
+			pass
+
 		sb = __MOD["sb"]
 	
 	
