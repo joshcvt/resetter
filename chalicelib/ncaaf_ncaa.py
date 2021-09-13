@@ -188,7 +188,7 @@ def get(team,forceReload=False,debug=False):
 			print ("loading I-AA scoreboard from NCAA")
 		sb = get_scoreboard(iaa=True)
 	elif tkey not in validFbSet:
-		raise NoTeamException
+		raise NoTeamException(tkey + " is not a valid team.")
 	else:
 		if forceReload or ("sb" not in __MOD) or (("sbdt" in __MOD) and (datetime.utcnow() - __MOD["sbdt"] > timedelta(minutes=1))):
 			if debug:
