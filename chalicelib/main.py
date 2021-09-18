@@ -3,7 +3,7 @@
 from string import capwords
 
 from .mlbstatsapi import launch as get_mlb
-#from .ncaaf_ncaa import get as get_ncaaf
+from .ncaaf_ncaa import get as get_ncaaf
 from .nhl import get as get_nhl
 from .reset_lib import joinOr, NoGameException, NoTeamException, DabException
 
@@ -13,7 +13,7 @@ def get_team(team,debug=False):
 	retList = None
 	opts = []
 		
-	#fns = {"mlb":get_mlb,"football":get_ncaaf,"nhl":get_nhl}
+	fns = {"mlb":get_mlb,"football":get_ncaaf,"nhl":get_nhl}
 	fns = {"mlb":get_mlb,"nhl":get_nhl}
 	
 	# first, try if the sport's defined.
