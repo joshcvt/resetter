@@ -32,25 +32,52 @@ def what_week():
 	else:
 		return ("%02d" % ((delta.days/7)+2,))
 
-def get_scoreboard(file=None,iaa=False):
+def get_scoreboard(file=None,iaa=False,debug=False):
 	"""Get scoreboard from site, or from file if specified for testing."""
 	
-	if not file:
+	if file:
+		fh = open(file,'r')
+		sb = json.load(fh)
+		fh.close()
+	else:
+		
 		week_url = SCOREBOARD_URL.replace("WHAT_WEEK",what_week())
 		if iaa:
 			week_url = week_url.replace("fbs","fcs")
+		
+		if debug:
+			print(week_url)
 		try:
 			fh = urllib.request.urlopen(week_url)
+			sb = json.load(fh)
 		except urllib.error.HTTPError as e:
 			if e.code == 404:
 				raise NoGameException("Scoreboard was HTTP 404 Not Found. This probably means the season is over.\n"+week_url)	
 			else:
 				raise e
-	else:
-		fh = open(file)
+		except Exception as e:
+			raise e
+		finally:
+			fh.close()
 		
-	json_text = fh.read().decode(encoding='utf-8')
-	return json.loads(json_text)
+		if (int(what_week()) > 12 and (not sb['games']) or (len(sb['games']) == 0)):
+			# try P for postseason if we're around the end-ish of the season
+			week_url = SCOREBOARD_URL.replace("WHAT_WEEK","P")
+			if iaa:
+				week_url = week_url.replace("fbs","fcs")
+			try:
+				fh = urllib.request.urlopen(week_url)
+				sb = json.load(fh)
+			except urllib.error.URLError as e:
+				raise e
+			except Exception as e:
+				raise e
+			finally:
+				fh.close()
+			
+			raise NoGameException("Scoreboard was empty. This probably means the season is over.\n"+week_url)
+
+	return sb
 
 def find_game(sb,team):
 	"""Passed scoreboard dict and team string, get game."""
@@ -124,13 +151,13 @@ def spaceday(game,sayToday=False):
 	else:
 		now += timedelta(hours=API_TZ_STD_DT[0])
 	# so now is in ET to compare with the game day.
-	if (now.strftime('%d-%m-%Y') == game['startDate']):
+	if (now.strftime('%m-%d-%Y') == game['startDate']):
 		if sayToday:
 			return ' today'
 		else:
 			return ''
 	else:
-		return ' ' + datetime.strptime(game['startDate'],'%d-%m-%Y').strftime("%A")
+		return ' ' + datetime.strptime(game['startDate'],'%m-%d-%Y').strftime("%A")
 	
 
 def status(game):
@@ -154,7 +181,7 @@ def status(game):
 		elif game["currentPeriod"].strip().endswith("OT"):
 			status += " in " + game["currentPeriod"].strip() + " "
 		else:
-			status += ", " + game["timeclock"].strip() + " to go in the " + game["currentPeriod"].strip() + " quarter "
+			status += ", " + game["contestClock"].strip() + " to go in the " + game["currentPeriod"].strip().lower() + " quarter "
 		status += game_loc(game) + "."
 		
 	elif game["gameState"] == "pre":
@@ -185,19 +212,19 @@ def get(team,forceReload=False,debug=False):
 	
 	if (tkey in iaa) or (tkey in ncaaNickDict and ncaaNickDict[tkey] in iaa):
 		if debug: 
-			print ("loading I-AA scoreboard from NCAA")
-		sb = get_scoreboard(iaa=True)
+			print ("I-AA load: ", end="")
+		sb = get_scoreboard(iaa=True,debug=debug)
 	elif tkey not in validFbSet:
 		raise NoTeamException(tkey + " is not a valid team.")
 	else:
 		if forceReload or ("sb" not in __MOD) or (("sbdt" in __MOD) and (datetime.utcnow() - __MOD["sbdt"] > timedelta(minutes=1))):
 			if debug:
-				print ("loading scoreboard from NCAA")
-			__MOD["sb"] = get_scoreboard()
+				print ("fresh load: ", end="")
+			__MOD["sb"] = get_scoreboard(debug=debug)
 			__MOD["sbdt"] = datetime.utcnow()
 		else:
 			if debug:
-				print ("using cached scoreboard")
+				print ("cached: ", end="")
 			pass
 
 		sb = __MOD["sb"]

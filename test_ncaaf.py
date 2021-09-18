@@ -5,7 +5,7 @@ from chalicelib.reset_lib import NoGameException, NoTeamException
 
 print ("Trying some teams that are likely to have midweek games, some early, and Hawaii (aloha).\n")
 
-teams = ["Northern Ill.","Toledo","Western Michigan","MSU","VT","FSU","Tennessee","LSU","California","UCLA","Hawaii"]
+teams = ["Northern Ill.","Toledo","Western Michigan","MSU","VT","FSU","Tennessee","LSU","California","UCLA","Hawaii","Ohio"]
 
 for t in teams:
 	try:
