@@ -14,7 +14,6 @@ def get_team(team,debug=False):
 	opts = []
 		
 	fns = {"mlb":get_mlb,"football":get_ncaaf,"nhl":get_nhl}
-	fns = {"mlb":get_mlb,"nhl":get_nhl}
 	
 	# first, try if the sport's defined.
 	try:
