@@ -1,15 +1,22 @@
 #!/usr/bin/env python
 
-from chalicelib.ncaaf_ncaa import get
+#from chalicelib.ncaaf_ncaa import get
+from chalicelib.ncaaf_espn import get
 from chalicelib.reset_lib import NoGameException, NoTeamException
+
+from argparse import ArgumentParser
+
+args = ArgumentParser()
+args.add_argument('--file', type=str, default='', help='Test input file to run against')
+theargs = args.parse_args()
 
 print ("Trying some teams that are likely to have midweek games, some early, and Hawaii (aloha).\n")
 
-teams = ["Northern Ill.","Toledo","Western Michigan","MSU","VT","FSU","Tennessee","LSU","California","UCLA","Hawaii","Ohio"]
+teams = ["Northern Ill.","Marshall","Toledo","Western Michigan","MSU","VT","FSU","Tennessee","LSU","California","UCLA","Hawaii","Ohio"]
 
 for t in teams:
 	try:
-		print( get(t,debug=True) )
+		print( get(t,debug=True,file=theargs.file) )
 	except NoGameException as nge:
 		print (str(nge))
 	except NoTeamException as nte:
