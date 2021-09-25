@@ -87,21 +87,16 @@ def game_loc(game):
 
 def rank_name(team):
 	
-	return team["team"]["location"]	# could also be displayName which is full name
-	# TODO TODO TODO TODO TODO TODO rank_name
-	"""
-	raw = team["nameRaw"].strip()
+	#return 	# could also be displayName which is full name
 	
-	if raw.lower() in displayOverrides:
-		pref = displayOverrides[raw.lower()]
-	else:
-		pref = raw
-		
-	if team["teamRank"] == "0":
+	pref = team["team"]["location"]
+	#if pref.lower() in displayOverrides:		pref = displayOverrides[raw.lower()]
+	
+	if team["curatedRank"]['current'] == 99:
 		return pref
 	else:
-		return "#" + team["teamRank"].strip() + " " + pref
-	"""
+		return "#" + str(team["curatedRank"]['current']) + " " + pref
+
 
 def scoreline(game):
 	# flip home first if they're leading, otherwise away-first convention if it's tied
@@ -119,18 +114,18 @@ def scoreline(game):
 def spaceday(game,sayToday=False):
 	now = datetime.utcnow()
 	#system_utc_offset_hours = (time.timezone if (time.localtime().tm_isdst == 0) else time.altzone) / 60 / 60 * -1
-	if (now < DST_FLIP_UTC):
-		now += timedelta(hours=API_TZ_STD_DT[1])
-	else:
-		now += timedelta(hours=API_TZ_STD_DT[0])
+	#if (now < DST_FLIP_UTC):
+	#	now += timedelta(hours=API_TZ_STD_DT[1])
+	#else:
+	#  	now += timedelta(hours=API_TZ_STD_DT[0])
 	# so now is in ET to compare with the game day.
-	if (now.strftime('%m-%d-%Y') == game['startDate']):
+	if (now.strftime('%Y-%m-%d') == game['competitions'][0]['startDate'].split('T')[0]):
 		if sayToday:
 			return ' today'
 		else:
 			return ''
 	else:
-		return ' ' + datetime.strptime(game['startDate'],'%m-%d-%Y').strftime("%A")
+		return ' ' + datetime.strptime(game['competitions'][0]['startDate'].split('T')[0],'%Y-%m-%d').strftime("%A")
 	
 
 def status(game):
@@ -162,16 +157,19 @@ def status(game):
 	elif statusnode["type"]["name"] == "STATUS_SCHEDULED":
 		
 		status = rank_name(game["competitions"][0]['competitors'][1]) + " plays " + rank_name(game["competitions"][0]['competitors'][0]) + " at " + game["status"]["type"]["shortDetail"].strip() + spaceday(game) + " " + game_loc(game) + "."
-	
-	elif game["gameState"] in ("cancelled","postponed"):
-		status = rank_name(game["away"]) + " vs. " + rank_name(game["home"]) + " originally scheduled for" + spaceday(game,sayToday=True) + " " + game_loc(game) + " is " + game["gameState"] + "."
-	
-	elif game["gameState"] in ("delayed"):
-		status = rank_name(game["away"]) + " vs. " + rank_name(game["home"]) + " " + game_loc(game) + " is " + game["gameState"] + "."
-	
 	else:
-		status = "HELP! I don't understand game state '" + game["gameState"] + "' for " + rank_name(game["away"]) + " vs. " + rank_name(game["home"]) + "."
-	
+
+		status = "HELP! I don't understand game status[type][name] '" + statusnode["type"]["name"] + "' for " + rank_name(game["competitions"][0]['competitors'][1]) + " vs. " + rank_name(game["competitions"][0]['competitors'][0]) + "."
+
+	if 0:
+		if 1:
+			pass
+		elif game["gameState"] in ("cancelled","postponed"):
+			status = rank_name(game["away"]) + " vs. " + rank_name(game["home"]) + " originally scheduled for" + spaceday(game,sayToday=True) + " " + game_loc(game) + " is " + game["gameState"] + "."
+		elif game["gameState"] in ("delayed"):
+			status = rank_name(game["away"]) + " vs. " + rank_name(game["home"]) + " " + game_loc(game) + " is " + game["gameState"] + "."
+		
+			
 	return sentenceCap(status)
 
 

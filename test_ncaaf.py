@@ -12,7 +12,7 @@ theargs = args.parse_args()
 
 print ("Trying some teams that are likely to have midweek games, some early, and Hawaii (aloha).\n")
 
-teams = ["Northern Ill.","Marshall","Toledo","Western Michigan","MSU","VT","FSU","Tennessee","LSU","California","UCLA","Hawaii","Ohio"]
+teams = ["Northern Ill.","Marshall","Toledo","Virginia","MSU","VT","FSU","Tennessee","LSU","California","UCLA","Hawaii","Ohio"]
 
 for t in teams:
 	try:
