@@ -48,9 +48,11 @@ def get_scoreboard(file=None,iaa=False,debug=False):
 
 			# scoreboardWeekUrl = SCOREBOARD_ROOT_URL + "?week=" + str(weekValue) + "&groups=" + FBS_GROUPS + "&limit=388&" + now.timestamp().__str__()
 			if iaa:
-				scoreboardWeekUrl = SCOREBOARD_ROOT_URL + SB_FORMAT_TAIL % (iaa, FCS_GROUPS, now.timestamp().__str__())
+				scoreboardWeekUrl = SCOREBOARD_ROOT_URL + SB_FORMAT_TAIL % (str(weekValue), FCS_GROUPS, now.timestamp().__str__())
 			else:
-				scoreboardWeekUrl = SCOREBOARD_ROOT_URL + SB_FORMAT_TAIL % (str(weekValue),FBS_GROUPS,now.timestamp().__str__())
+				scoreboardWeekUrl = SCOREBOARD_ROOT_URL + SB_FORMAT_TAIL % (str(weekValue), FBS_GROUPS, now.timestamp().__str__())
+			if debug:
+				print("URL: " + scoreboardWeekUrl)
 			with urllib.request.urlopen(scoreboardWeekUrl) as fh:
 				sb = json.load(fh)
 		except urllib.error.HTTPError as e:
@@ -186,13 +188,13 @@ def get(team,forceReload=False,debug=False,file=None):
 	if debug:
 		print("tkey: " + tkey + ", ", end="")
 	
-	"""if (tkey in iaa) or (tkey in ncaaNickDict and ncaaNickDict[tkey] in iaa):
+	if (tkey in iaa) or (tkey in ncaaNickDict and ncaaNickDict[tkey] in iaa):
 		if debug: 
 			print ("I-AA load: ", end="")
 		sb = get_scoreboard(iaa=True,debug=debug)
 	elif tkey not in validFbSet:
 		raise NoTeamException(tkey + " is not a valid team.")
-	"""
+	
 	if 0 == 1:
 		pass
 	else:
@@ -224,7 +226,6 @@ def get(team,forceReload=False,debug=False,file=None):
 			game = find_game(sb,ncaaNickDict[tkey])
 			if game:
 				return status(game)
-	
 	
 	# fallthru
 	ret = "No game this week for " + team
