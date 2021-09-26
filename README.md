@@ -2,7 +2,7 @@
 
 (c) 2016-21 J. W. Crockett, Jr.<sup><a href="#footnote1">1</a></sup>, [@joshcvt](http://twitter.com/joshcvt)
 
-**resetter** is a lightweight Python 3.9 Slack bot to fetch game statuses and results.  Originally built for Major League Baseball, requesting the targeted team's status from the MLB.com GDX API, it has since been ported to StatsAPI for MLB and can also scrape NHL scores from NHL.com; re-enable of NCAA football statuses from NCAA.com is [pending](https://github.com/joshcvt/resetter/issues/4).  It's built using the [Chalice](https://github.com/aws/chalice) framework. 
+**resetter** is a lightweight Python 3.9 Slack bot to fetch game statuses and results.  Originally built for Major League Baseball, requesting the targeted team's status from the MLB.com GDX API, it has since been ported to StatsAPI for MLB and can also scrape NHL scores from NHL.com and college football scores from ESPN.com.  It's built using the [Chalice](https://github.com/aws/chalice) framework. 
 
 The code is licensed under the MIT License.  The data belongs to its respective league/association owners and/or their licensees.<sup><a href="#footnote1">1</a></sup>
 
