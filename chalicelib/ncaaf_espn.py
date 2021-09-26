@@ -3,7 +3,7 @@
 import urllib.request, urllib.error, urllib.parse, json, traceback, time
 from datetime import datetime, timedelta
 from .reset_lib import joinOr, sentenceCap, NoGameException, NoTeamException, toOrdinal
-from .ncaa_lib import ncaaNickDict, displayOverrides, iaa, validFbSet
+from .ncaa_espn_lib import ncaaNickDict, displayOverrides, iaa, validFbSet
 
 # when, during the season, we go from EDT to EST.
 # correct way to do this is with tzinfo, but I'd like to avoid packaging extra libraries,
@@ -115,7 +115,7 @@ def scoreline(game):
 	return (rank_name(gleader) + " " + gleader["score"].strip() + ", " + rank_name(gtrailer) + " " + gtrailer["score"].strip())
 
 def spaceday(game,sayToday=False):
-	now = datetime.utcnow()
+	now = datetime.now()
 	#system_utc_offset_hours = (time.timezone if (time.localtime().tm_isdst == 0) else time.altzone) / 60 / 60 * -1
 	#if (now < DST_FLIP_UTC):
 	#	now += timedelta(hours=API_TZ_STD_DT[1])
@@ -151,16 +151,20 @@ def status(game):
 	else:
 		status = scoreline(game)
 		
-		if (statusnode["type"]["name"] == "STATUS_END_PERIOD") or ((statusnode["type"]["name"] == "STATUS_IN_PROGRESS") and (statusnode["displayClock"].strip() == "0:00")):
+		if statusnode["type"]["name"] == "STATUS_HALFTIME":
+			status += " at halftime "
+		elif statusnode["type"]["name"] == "STATUS_IN_PROGRESS" and statusnode["type"]["detail"].endswith("OT"):
+			status += " in " + statusnode["type"]["detail"] + " "
+		elif (statusnode["type"]["name"] == "STATUS_END_PERIOD") or ((statusnode["type"]["name"] == "STATUS_IN_PROGRESS") and (statusnode["displayClock"].strip() == "0:00")):
 			status += ", end of the " + toOrdinal(statusnode["period"]) + " quarter "
 		elif (statusnode["type"]["name"] == "STATUS_IN_PROGRESS") and (statusnode["displayClock"].strip() == "15:00"):
 			status += ", start of the " + toOrdinal(statusnode["period"]) + " quarter "
-		elif statusnode["type"]["name"] == "STATUS_HALFTIME":
-			status += " at halftime "
 		elif statusnode["type"]["name"] == "STATUS_IN_PROGRESS":			
 			status += ", " + statusnode["displayClock"].strip() + " to go in the " + toOrdinal(statusnode["period"]) + " quarter "
-		else:
+		
+		else: # just dump it
 			status += ", " + statusnode["type"]["name"] + ' '
+		
 
 		status += game_loc(game) + "."
 	
@@ -217,14 +221,14 @@ def get(team,forceReload=False,debug=False,file=None):
 	
 	if game:
 		return status(game)
-	"""elif (tkey in ncaaNickDict):
+	elif (tkey in ncaaNickDict):
 		if (ncaaNickDict[tkey].__class__ == list):
 			return "For " + team + ", please choose " + joinOr(ncaaNickDict[tkey]) + "."
 		else:
 			game = find_game(sb,ncaaNickDict[tkey])
 			if game:
 				return status(game)
-	"""
+	
 	
 	# fallthru
 	ret = "No game this week for " + team
