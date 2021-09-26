@@ -2,8 +2,8 @@
 
 import urllib.request, urllib.error, urllib.parse, json, traceback, time
 from datetime import datetime, timedelta
-from .reset_lib import joinOr, sentenceCap, NoGameException, NoTeamException
-#from .ncaa_lib import ncaaNickDict, displayOverrides, iaa, validFbSet
+from .reset_lib import joinOr, sentenceCap, NoGameException, NoTeamException, toOrdinal
+from .ncaa_lib import ncaaNickDict, displayOverrides, iaa, validFbSet
 
 # when, during the season, we go from EDT to EST.
 # correct way to do this is with tzinfo, but I'd like to avoid packaging extra libraries,
@@ -13,31 +13,49 @@ DST_FLIP_UTC = datetime(2021,10,31,6,0)
 # what we expect the API to give us.  EST/EDT, most likely.
 API_TZ_STD_DT = (-5,-4)
 
-SCOREBOARD_URL = "http://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard"
-
+SCOREBOARD_ROOT_URL = "http://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard"
+# start with this to get weeks, then customize for this week and full scoreboard
+#http://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?week=4&groups=80&limit=388&1577314600
 __MOD = {}
 
 
 def get_scoreboard(file=None,iaa=False,debug=False):
 	"""Get scoreboard from site, or from file if specified for testing."""
 	
+	FBS_GROUPS = "80"
+	FCS_GROUPS = "81"
+
+	SB_FORMAT_TAIL = '?week=%s&groups=%s&limit=388&%s'
+
 	if file:
 		print ("Using scoreboard from file: " + file)
 		with open(file) as f:
 			sb = json.load(f)
 	else:
 		
-		if iaa:
-			raise NoGameException("NCAAF_ESPN module can't get I-AA scores for now.")
-		
 		if debug:
-			print(SCOREBOARD_URL)
+			print("Root: " + SCOREBOARD_ROOT_URL)
+		
 		try:
-			fh = urllib.request.urlopen(SCOREBOARD_URL)
-			sb = json.load(fh)
+			scoreboardWeekUrl = "unconstructed"
+			with urllib.request.urlopen(SCOREBOARD_ROOT_URL) as fh:
+				sb = json.load(fh)
+			now = datetime.now()
+			for week in sb['leagues'][0]['calendar'][0]['entries']:			
+				if datetime.strptime(week['endDate'],'%Y-%m-%dT%H:%MZ') > now:
+					weekValue = week['value']
+					break
+
+			# scoreboardWeekUrl = SCOREBOARD_ROOT_URL + "?week=" + str(weekValue) + "&groups=" + FBS_GROUPS + "&limit=388&" + now.timestamp().__str__()
+			if iaa:
+				scoreboardWeekUrl = SCOREBOARD_ROOT_URL + SB_FORMAT_TAIL % (iaa, FCS_GROUPS, now.timestamp().__str__())
+			else:
+				scoreboardWeekUrl = SCOREBOARD_ROOT_URL + SB_FORMAT_TAIL % (str(weekValue),FBS_GROUPS,now.timestamp().__str__())
+			with urllib.request.urlopen(scoreboardWeekUrl) as fh:
+				sb = json.load(fh)
 		except urllib.error.HTTPError as e:
 			if e.code == 404:
-				raise NoGameException("Scoreboard was HTTP 404 Not Found. This probably means the season is over.\n")	
+				raise NoGameException("Scoreboard HTTP 404. This probably means the season is over. Root = " + SCOREBOARD_ROOT_URL + ", week " + scoreboardWeekUrl + "\n")	
 			else:
 				raise e
 		except Exception as e:
@@ -67,23 +85,8 @@ def test_game(game,team):
 
 def game_loc(game):
 	
-	#return "at " + game["home"]["names"]["short"]
-
 	return "in " + game["competitions"][0]["venue"]["address"]["city"]
-	"""sp = game["location"].rsplit(",",2)
-	if len(sp) != 3:
-		# something that definitely isn't stadium, city, state, so just return it all
-		return "at " + game["location"].strip()	
-	else:
-		# if this matches either no commas or a "Memorial Stadium (Lincoln, NE)" pattern, it's standard
-		# regex would be simpler, but I'd like to save importing re if I can
-		stsp = sp[0].strip().split(",")
-		if ((len(stsp) == 1) or ((len(stsp) == 2) and ("(" in stsp[0]) and stsp[1].endswith(")"))):
-			return "in " + sp[1].strip()
-		else:
-			# it's something messy, send it all back.
-			return "at " + game["location"].strip()	
-	"""
+	# probably want to get stadium and city for neutral-site games
 
 def rank_name(team):
 	
@@ -141,26 +144,26 @@ def status(game):
 			status += statusnode["type"]["detail"].split("/")[1]
 		status += "."
 		
-	elif statusnode["type"]["name"] == "STATUS_IN_PROGRESS":
-		
-		status = scoreline(game) 
-		#if game["currentPeriod"].strip() == "Halftime":
-		#	status += " at halftime "
-		#elif game["currentPeriod"].startswith("End"):
-		#	status += ", " + game["currentPeriod"].strip().lower() + " quarter "
-		#elif game["currentPeriod"].strip().endswith("OT"):
-		#	status += " in " + game["currentPeriod"].strip() + " "
-		#else:
-		status += ", " + statusnode["displayClock"].strip() + " to go in the " + str(statusnode["period"]) + " quarter "
-		status += game_loc(game) + "."
-		
 	elif statusnode["type"]["name"] == "STATUS_SCHEDULED":
 		
 		status = rank_name(game["competitions"][0]['competitors'][1]) + " plays " + rank_name(game["competitions"][0]['competitors'][0]) + " at " + game["status"]["type"]["shortDetail"].strip() + spaceday(game) + " " + game_loc(game) + "."
+	
 	else:
+		status = scoreline(game)
+		
+		if (statusnode["type"]["name"] == "STATUS_END_PERIOD") or ((statusnode["type"]["name"] == "STATUS_IN_PROGRESS") and (statusnode["displayClock"].strip() == "0:00")):
+			status += ", end of the " + toOrdinal(statusnode["period"]) + " quarter "
+		elif (statusnode["type"]["name"] == "STATUS_IN_PROGRESS") and (statusnode["displayClock"].strip() == "15:00"):
+			status += ", start of the " + toOrdinal(statusnode["period"]) + " quarter "
+		elif statusnode["type"]["name"] == "STATUS_HALFTIME":
+			status += " at halftime "
+		elif statusnode["type"]["name"] == "STATUS_IN_PROGRESS":			
+			status += ", " + statusnode["displayClock"].strip() + " to go in the " + toOrdinal(statusnode["period"]) + " quarter "
+		else:
+			status += ", " + statusnode["type"]["name"] + ' '
 
-		status = "HELP! I don't understand game status[type][name] '" + statusnode["type"]["name"] + "' for " + rank_name(game["competitions"][0]['competitors'][1]) + " vs. " + rank_name(game["competitions"][0]['competitors'][0]) + "."
-
+		status += game_loc(game) + "."
+	
 	if 0:
 		if 1:
 			pass

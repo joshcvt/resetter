@@ -21,6 +21,25 @@ def sentenceCap(sen):
 	else:
 		return sen[0].upper() + sen[1:]
 
+def toOrdinal(num):
+	intver = int(num)
+	if intver < 0:
+		return str(num)
+	elif intver == 0:
+		return "0th"
+	elif (intver % 100) in [11, 12, 13]:
+		return str(num) + "th"
+	elif intver % 10 == 1:
+		return str(num) + "st"
+	elif intver % 10 == 2:
+		return str(num) + "nd"
+	elif intver % 10 == 3:
+		return str(num) + "rd"
+	else:
+		return str(num) + "th"
+	return "num"
+
+
 class NoTeamException(Exception):
 	pass
 
