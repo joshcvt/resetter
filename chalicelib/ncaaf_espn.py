@@ -115,20 +115,16 @@ def scoreline(game):
 	return (rank_name(gleader) + " " + gleader["score"].strip() + ", " + rank_name(gtrailer) + " " + gtrailer["score"].strip())
 
 def spaceday(game,sayToday=False):
-	now = datetime.now()
-	#system_utc_offset_hours = (time.timezone if (time.localtime().tm_isdst == 0) else time.altzone) / 60 / 60 * -1
-	#if (now < DST_FLIP_UTC):
-	#	now += timedelta(hours=API_TZ_STD_DT[1])
-	#else:
-	#  	now += timedelta(hours=API_TZ_STD_DT[0])
-	# so now is in ET to compare with the game day.
-	if (now.strftime('%Y-%m-%d') == game['competitions'][0]['startDate'].split('T')[0]):
+	(now, utcnow) = (datetime.now(),datetime.utcnow())
+	utcdiff = (utcnow - now).seconds
+	startLocal = datetime.strptime(game['competitions'][0]['startDate'], "%Y-%m-%dT%H:%MZ") - timedelta(seconds=utcdiff)
+	if startLocal.date() == now.date():
 		if sayToday:
 			return ' today'
 		else:
 			return ''
 	else:
-		return ' ' + datetime.strptime(game['competitions'][0]['startDate'].split('T')[0],'%Y-%m-%d').strftime("%A")
+		return ' ' + startLocal.strftime("%A")
 	
 
 def status(game):
@@ -146,7 +142,7 @@ def status(game):
 		
 	elif statusnode["type"]["name"] == "STATUS_SCHEDULED":
 		
-		status = rank_name(game["competitions"][0]['competitors'][1]) + " plays " + rank_name(game["competitions"][0]['competitors'][0]) + " at " + game["status"]["type"]["shortDetail"].strip() + spaceday(game) + " " + game_loc(game) + "."
+		status = rank_name(game["competitions"][0]['competitors'][1]) + " plays " + rank_name(game["competitions"][0]['competitors'][0]) + " at " + game["status"]["type"]["shortDetail"].split(' - ')[1] + spaceday(game) + " " + game_loc(game) + "."
 	
 	else:
 		status = scoreline(game)
