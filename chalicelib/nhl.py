@@ -15,7 +15,7 @@ SCOREBOARD_URL_JSON = "https://statsapi.web.nhl.com/api/v1/schedule?startDate=YY
 validTeams = ("rangers","islanders","capitals","flyers","penguins","blue jackets","hurricanes","devils",
     "red wings","sabres","maple leafs","senators","canadiens","bruins","panthers","lightning",
     "predators","blackhawks","blues","wild","jets","stars","avalanche",
-    "oilers","flames","canucks","sharks","kings","ducks","coyotes","golden knights"
+    "oilers","flames","canucks","sharks","kings","ducks","coyotes","golden knights","kraken"
 )
 
 dabBacks = {
@@ -33,7 +33,8 @@ derefs = { "rangers":["nyr","blueshirts"],"islanders":["isles","nyi","brooklyn"]
     "avalanche":['avs','col','colorado'],
     "oilers":['edm','oil',"edmonton"],"flames":['cgy','calgary'],"canucks":['nucks','van','vancouver'],
     "sharks":['sj','san jose','san josé'],"kings":['la','lak',"los angeles"],"ducks":['ana','anaheim','mighty ducks'],
-    "coyotes":['phx','ari','arizona','yotes',"phoenix"],"golden knights":['vegas','lv','knights',"vgk","las vegas"]
+    "coyotes":['phx','ari','arizona','yotes',"phoenix"],"golden knights":['vegas','lv','knights',"vgk","las vegas"],
+    "kraken":['sea','seattle','krak']
 }
 
 __MOD = {}
