@@ -5,19 +5,15 @@ from datetime import datetime, timedelta
 from .reset_lib import joinOr, sentenceCap, NoGameException, NoTeamException, toOrdinal
 from .ncaa_espn_lib import ncaaNickDict, displayOverrides, iaa, validFbSet
 
-# when, during the season, we go from EDT to EST.
-# correct way to do this is with tzinfo, but I'd like to avoid packaging extra libraries,
-# and we have to manually set the WEEK_1_2_FLIP_UTC value every year anyway.
-DST_FLIP_UTC = datetime(2021,10,31,6,0)
-
-# what we expect the API to give us.  EST/EDT, most likely.
-API_TZ_STD_DT = (-5,-4)
-
 SCOREBOARD_ROOT_URL = "http://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard"
 # start with this to get weeks, then customize for this week and full scoreboard
 #http://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?week=4&groups=80&limit=388&1577314600
+
+# global for caching
 __MOD = {}
 
+# cache time for scoreboard
+CACHE_INTERVAL = timedelta(minutes=1)
 
 def get_scoreboard(file=None,iaa=False,debug=False):
 	"""Get scoreboard from site, or from file if specified for testing."""
@@ -184,23 +180,21 @@ def get(team,forceReload=False,debug=False,file=None):
 
 	tkey = team.lower().strip()
 	
-	#sb = get_scoreboard()
 	if debug:
 		print("tkey: " + tkey + ", ", end="")
 	
 	if (tkey in iaa) or (tkey in ncaaNickDict and ncaaNickDict[tkey] in iaa):
+		# we're going to be lazy about caching and just always reload for I-AA games
 		if debug: 
 			print ("I-AA load: ", end="")
 		sb = get_scoreboard(iaa=True,debug=debug)
 	elif tkey not in validFbSet:
 		raise NoTeamException(tkey + " is not a valid team.")
 	
-	if 0 == 1:
-		pass
-	else:
+	else:	# main I-A schedule cycle
 		if forceReload \
 				or ("ncaafsb" not in __MOD) \
-				or (("ncaafsbdt" in __MOD) and (datetime.utcnow() - __MOD["ncaafsbdt"] > timedelta(minutes=1))) \
+				or (("ncaafsbdt" in __MOD) and (datetime.utcnow() - __MOD["ncaafsbdt"] > CACHE_INTERVAL)) \
 				or (("ncaafsb" in __MOD) and (("ncaaffile" not in __MOD) or (file != __MOD["ncaaffile"]))):
 			if debug:
 				print ("fresh load: ", end="")

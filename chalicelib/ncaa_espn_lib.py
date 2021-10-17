@@ -66,7 +66,7 @@ ncaaNickDict = {'rebels': ['Ole Miss','UNLV'], "runnin' rebels":"unlv","ole miss
 	'bears': 'baylor', 
 	'eagles': 'georgia southern',
 	'seminoles': 'florida state', 'noles': 'florida state', 'fsu':'florida state',
-	'tigers': ['Missouri', 'Clemson', 'Auburn', 'LSU', "Memphis","Towson"], 'mizzou':'missouri',
+	'tigers': ['Missouri', 'Clemson', 'Auburn', 'LSU', "Memphis","Towson","Princeton"], 'mizzou':'missouri',
 	'bulldogs': ['Mississippi State','Georgia'], 'mississippi state':'mississippi st.', 'clanga':'mississippi st.','dawgs':'georgia', 
 	'wolfpack': 'nc state', 'north carolina state': 'nc state', 'n.c. state': 'nc state', 
 	'mountaineers': 'west virginia', 'eers': 'west virginia', 'wvu': 'west virginia',
@@ -113,12 +113,14 @@ ncaaNickDict = {'rebels': ['Ole Miss','UNLV'], "runnin' rebels":"unlv","ole miss
 	'seawolves':'stony brook','unh':'new hampshire','nova':'villanova',#'towson',
 	'spiders':'richmond','udel':'delaware','blue hens':'delaware',
 	'dukes':'james madison','jmu':'james madison','tribe':'william & mary',
-	'phoenix':'elon','great danes':'albany','black bears':'maine','uri':'rhode island'
+	'phoenix':'elon','great danes':'albany','black bears':'maine','uri':'rhode island',
+	'penn':'pennsylvania'
 }
 
 # permissible teams in FCS/I-AA
 iaa = ('stony brook','new hampshire','villanova','towson','richmond','delaware',
-	'james madison','william & mary','elon','albany','maine','rhode island'
+	'james madison','william & mary','elon','albany','maine','rhode island',
+	'princeton','yale','harvard','brown','cornell','dartmouth','pennsylvania','columbia',
 )
 
 displayOverrides = {
