@@ -9,7 +9,8 @@ from os import sys
 from .nat_lib import *
 from .reset_lib import NoGameException, NoTeamException, DabException
 
-intRolloverLocalTime = 1000		# for resetter this is UTC because Lambda runs in UTC
+ROLLOVER_LOCALTIME_INT = 1000		# for resetter this is UTC because Lambda runs in UTC
+PLAYOFF_GAME_TYPES = ['F','D','L','W']
 
 #logLevel = logging.DEBUG
 #logFN = "resetter.log"
@@ -151,6 +152,9 @@ def getReset(g,team,fluidVerbose):
 		if (g["linescore"]["currentInning"] != 9):
 			reset += " in " + str(g["linescore"]["currentInning"]) + " innings"
 		reset += ". "
+	else:
+		# if it's not final and it's playoffs, we want TV
+		reset += ' TV: ' + getTVNets(g) + '. '
 		
 	
 	if (len(reset) == 0):
@@ -217,13 +221,15 @@ def getWLERA(pitcher):
 			return str(sg["stats"]["wins"]) + "-" + str(sg["stats"]["losses"]) + ", " + sg["stats"]["era"]
 	return ""
 
-def getTVNets(g,ah):
+def getTVNets(g,ah=None,suppressIntl=True):
 	ret = []
 	for bc in g["broadcasts"]:
 		if bc["type"] == "TV":
-			if (("isNational" in list(bc.keys())) or (bc["homeAway"] == ah)):
+			if (("isNational" in list(bc.keys())) or (ah and bc["homeAway"] == ah)):
 				name = bc["name"]
-				if name not in ret:
+				if suppressIntl and name.endswith("-INT"):
+					pass
+				elif name not in ret:
 					ret.append(name)
 	return ",".join(ret)
 
@@ -241,7 +247,9 @@ def getProbables(g,tvTeam=None,preferredTZ="America/New_York"):
 	
 	runningStr += " starts at " + iso8601toLocalTZ(g["gameDate"]) + "."
 	
-	if tvTeam and (tvTeam not in ("suppress","scoreboard","schedule")):
+	if tvTeam and (g["gameType"] not in PLAYOFF_GAME_TYPES) and (tvTeam not in ("suppress","scoreboard","schedule")):
+		# if playoff game, we don't want to show the TV network as part of pregame because we'll always add it later
+		
 		# lazy default here
 		homeaway = "home"
 		if tvTeam == awayAbbr:
@@ -263,7 +271,7 @@ def launch(team,fluidVerbose=True,rewind=False,ffwd=False):
 
 	#logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',filename=logFN, level=logLevel)
 	
-	localRollover = intRolloverLocalTime
+	localRollover = ROLLOVER_LOCALTIME_INT
 	
 	# for testing
 	if rewind:
