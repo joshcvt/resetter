@@ -152,4 +152,4 @@ def validDabs():
 				dabs.append(j.lower())
 	return dabs
 	
-validFbSet = list(ncaaNickDict.keys()) + list(ncaaNickDict.values()) + list(iaa) + validDabs()
+validFbSet = list(ncaaNickDict.keys()) + list(ncaaNickDict.values()) + list(iaa) + validDabs() + list(map(lambda lower: lower.lower(),list(displayOverrides.values())))
