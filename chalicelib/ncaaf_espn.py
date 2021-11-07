@@ -63,7 +63,7 @@ def get_scoreboard(file=None,iaa=False,debug=False):
 
 	return sb
 
-def find_game(sb,team):
+def find_game(sb,team,debug=False):
 	"""Passed scoreboard dict and team string, get game."""
 
 	for event in sb['events']:
@@ -149,6 +149,8 @@ def status(game):
 			status += " at halftime "
 		elif statusnode["type"]["name"] == "STATUS_IN_PROGRESS" and statusnode["type"]["detail"].endswith("OT"):
 			status += " in " + statusnode["type"]["detail"] + " "
+		elif statusnode["type"]["name"] == "STATUS_IN_PROGRESS" and toOrdinal(statusnode["period"]) and (int(statusnode["period"]) > 4):
+			status += " start of " + (statusnode["period"]) + "OT "
 		elif (statusnode["type"]["name"] == "STATUS_END_PERIOD") or ((statusnode["type"]["name"] == "STATUS_IN_PROGRESS") and (statusnode["displayClock"].strip() == "0:00")):
 			status += ", end of the " + toOrdinal(statusnode["period"]) + " quarter "
 		elif (statusnode["type"]["name"] == "STATUS_IN_PROGRESS") and (statusnode["displayClock"].strip() == "15:00"):
@@ -209,7 +211,7 @@ def get(team,forceReload=False,debug=False,file=None):
 		sb = __MOD["ncaafsb"]
 	
 	
-	game = find_game(sb,team)
+	game = find_game(sb,team,debug)
 	
 	if game:
 		return status(game)
@@ -217,7 +219,7 @@ def get(team,forceReload=False,debug=False,file=None):
 		if (ncaaNickDict[tkey].__class__ == list):
 			return "For " + team + ", please choose " + joinOr(ncaaNickDict[tkey]) + "."
 		else:
-			game = find_game(sb,ncaaNickDict[tkey])
+			game = find_game(sb,ncaaNickDict[tkey],debug)
 			if game:
 				return status(game)
 	

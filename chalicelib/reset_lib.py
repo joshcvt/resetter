@@ -22,7 +22,11 @@ def sentenceCap(sen):
 		return sen[0].upper() + sen[1:]
 
 def toOrdinal(num):
-	intver = int(num)
+	try:
+		intver = int(num)
+	except:
+		return False
+		
 	if intver < 0:
 		return str(num)
 	elif intver == 0:
