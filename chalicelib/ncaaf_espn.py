@@ -142,6 +142,11 @@ def status(game):
 		
 		status = rank_name(game["competitions"][0]['competitors'][1]) + " plays " + rank_name(game["competitions"][0]['competitors'][0]) + " at " + game["status"]["type"]["shortDetail"].split(' - ')[1] + spaceday(game) + " " + game_loc(game) + "."
 	
+	elif statusnode["type"]["name"] == "STATUS_POSTPONED":
+		status = rank_name(game["competitions"][0]['competitors'][1]) + " vs. " + rank_name(game["competitions"][0]['competitors'][0]) + " is postponed."
+	elif statusnode["type"]["name"] == "STATUS_CANCELED":
+		status = rank_name(game["competitions"][0]['competitors'][1]) + " vs. " + rank_name(game["competitions"][0]['competitors'][0]) + " has been cancelled."
+	
 	else:
 		status = scoreline(game)
 		
