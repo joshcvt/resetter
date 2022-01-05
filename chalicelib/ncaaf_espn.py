@@ -20,8 +20,9 @@ def get_scoreboard(file=None,iaa=False,debug=False):
 	
 	FBS_GROUPS = "80"
 	FCS_GROUPS = "81"
-
+	
 	SB_FORMAT_TAIL = '?week=%s&groups=%s&limit=388&%s'
+	SB_FORMAT_NOWEEKTAIL = '?groups=%s&limit=388&%s'
 
 	if file:
 		print ("Using scoreboard from file: " + file)
@@ -36,21 +37,32 @@ def get_scoreboard(file=None,iaa=False,debug=False):
 			scoreboardWeekUrl = "unconstructed"
 			with urllib.request.urlopen(SCOREBOARD_ROOT_URL) as fh:
 				sb = json.load(fh)
+			
 			now = datetime.now()
-			for week in sb['leagues'][0]['calendar'][0]['entries']:			
-				if datetime.strptime(week['endDate'],'%Y-%m-%dT%H:%MZ') > now:
-					weekValue = week['value']
-					break
-
-			# scoreboardWeekUrl = SCOREBOARD_ROOT_URL + "?week=" + str(weekValue) + "&groups=" + FBS_GROUPS + "&limit=388&" + now.timestamp().__str__()
-			if iaa:
-				scoreboardWeekUrl = SCOREBOARD_ROOT_URL + SB_FORMAT_TAIL % (str(weekValue), FCS_GROUPS, now.timestamp().__str__())
+			if not sb:
+				raise Exception("No scoreboard data returned.")
+			elif sb['season']['type'] == 3:	
+				if debug:
+					print("Season is post-season.")
+				scoreboardWeekUrl = SCOREBOARD_ROOT_URL + SB_FORMAT_NOWEEKTAIL % (FBS_GROUPS, now.timestamp().__str__())
 			else:
-				scoreboardWeekUrl = SCOREBOARD_ROOT_URL + SB_FORMAT_TAIL % (str(weekValue), FBS_GROUPS, now.timestamp().__str__())
-			if debug:
-				print("URL: " + scoreboardWeekUrl)
-			with urllib.request.urlopen(scoreboardWeekUrl) as fh:
-				sb = json.load(fh)
+				# get the week-based scoreboard
+				
+				for week in sb['leagues'][0]['calendar'][0]['entries']:			
+					if datetime.strptime(week['endDate'],'%Y-%m-%dT%H:%MZ') > now:
+						weekValue = week['value']
+						break
+
+				# scoreboardWeekUrl = SCOREBOARD_ROOT_URL + "?week=" + str(weekValue) + "&groups=" + FBS_GROUPS + "&limit=388&" + now.timestamp().__str__()
+				if iaa:
+					scoreboardWeekUrl = SCOREBOARD_ROOT_URL + SB_FORMAT_TAIL % (str(weekValue), FCS_GROUPS, now.timestamp().__str__())
+				else:
+					scoreboardWeekUrl = SCOREBOARD_ROOT_URL + SB_FORMAT_TAIL % (str(weekValue), FBS_GROUPS, now.timestamp().__str__())
+				if debug:
+					print("URL: " + scoreboardWeekUrl)
+				with urllib.request.urlopen(scoreboardWeekUrl) as fh:
+					sb = json.load(fh)
+			# we still don't have I-AA postseason scoreboard.
 		except urllib.error.HTTPError as e:
 			if e.code == 404:
 				raise NoGameException("Scoreboard HTTP 404. This probably means the season is over. Root = " + SCOREBOARD_ROOT_URL + ", week " + scoreboardWeekUrl + "\n")	
