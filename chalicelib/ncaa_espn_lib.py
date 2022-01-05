@@ -119,7 +119,7 @@ ncaaNickDict = {'rebels': ['Ole Miss','UNLV'], "runnin' rebels":"unlv","ole miss
 
 # permissible teams in FCS/I-AA
 iaa = ('stony brook','new hampshire','villanova','towson','richmond','delaware',
-	'james madison','william & mary','elon','albany','maine','rhode island',
+	'william & mary','elon','albany','maine','rhode island',
 	'princeton','yale','harvard','brown','cornell','dartmouth','pennsylvania','columbia',
 )
 
