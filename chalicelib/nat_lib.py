@@ -77,7 +77,7 @@ codeToVariants = {
 	"DET":["Detroit","Tigers","Detroit Tigers"],
 	"MIN":["Minnesota","Twins","Minnesota Twins"],
 	"KC":["Kansas City","Royals","Kay Cee","KC","Kansas City Royals"],
-	"CLE":["Cleveland","Wahoos","Indians","Cleveland Indians"],
+	"CLE":["Cleveland","Wahoos","Indians","Cleveland Indians","Guardians","Cleveland Guardians"],
 	"CWS":["Chicago White Sox","White Sox","ChiSox","Shy Sox"],
 	
 	"LAA":["Angels","Los Angeles Angels","L.A. Angels of Anaheim","Anaheim"],
