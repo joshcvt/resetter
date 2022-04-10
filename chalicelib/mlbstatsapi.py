@@ -86,21 +86,14 @@ def getReset(g,team,fluidVerbose):
 
 	stat = g["status"]["detailedState"]
 	reset = ""
-	
 	is_dh = is_doubleheader(g)
 	
 	if stat in PREGAME_STATUS_CODES:
-		if fluidVerbose:
-			reset += getProbables(g,team)
-		else:
-			reset += g["teams"]["away"]["team"]["teamName"] + " at " + g["teams"]["home"]["team"]["teamName"]
-			if is_dh:
-				reset += ' (game ' + str(g["gameNumber"]) + ')'
-			reset += " starts at " + iso8601toLocalTZ(g["gameDate"]) + "."
+		reset += getProbables(g,team,verbose=fluidVerbose)
 
 		if stat in ANNOUNCE_STATUS_CODES:	# delayed start
 			reset = reset[:-1] + " (" + stat.lower() + ")."
-	
+
 	if stat in UNDERWAY_STATUS_CODES:
 		
 		inningState = g["linescore"]["inningState"].lower()
@@ -114,7 +107,7 @@ def getReset(g,team,fluidVerbose):
 						
 		if inningState in ("top","bottom"): 	#in play
 			
-			runners = list(g["linescore"]["offense"].keys())		
+			runners = list(g["linescore"]["offense"].keys())
 			if "first" in runners:
 				if "second" in runners:
 					if "third" in runners:
@@ -132,9 +125,6 @@ def getReset(g,team,fluidVerbose):
 					reset += "Runner on second. "
 			elif "third" in runners:
 				reset += "Runner on third. "
-			else:
-				if len(runners) != 0:
-					print("uh, we broke runners somehow")
 			
 			outs = str(g["linescore"]["outs"])
 			if outs == "0":
@@ -143,7 +133,7 @@ def getReset(g,team,fluidVerbose):
 				reset += outs + " out. "
 			else:
 				reset += outs + " outs. "
-	
+
 	if stat in FINAL_STATUS_CODES:
 		reset += "Final "
 		if is_dh:
@@ -152,10 +142,14 @@ def getReset(g,team,fluidVerbose):
 		if (g["linescore"]["currentInning"] != 9):
 			reset += " in " + str(g["linescore"]["currentInning"]) + " innings"
 		reset += ". "
-	else:
-		# if it's not final and it's playoffs, we want TV
-		reset += ' TV: ' + getTVNets(g) + '. '
-		
+	elif stat not in POSTPONED_STATUS_CODES and "TV" not in reset:
+		# if it's not final, we want TV. National at least, local if it's a team we specifically requested.
+		if (team in ["scoreboard","schedule"]):
+			homeaway = "national"
+		else:
+			homeaway = "away" if team == g["teams"]["away"]["team"]["abbreviation"] else "home"
+		tvNets = getTVNets(g,homeaway)
+		reset += (' TV: ' + tvNets + '. ') if (tvNets != None and tvNets != "") else ""
 	
 	if (len(reset) == 0):
 		# common path for various weird statuses with a specific cutout for postponed
@@ -231,38 +225,26 @@ def getTVNets(g,ah=None,suppressIntl=True):
 					pass
 				elif name not in ret:
 					ret.append(name)
-	return ",".join(ret)
+	return ", ".join(ret)
 
-def getProbables(g,tvTeam=None,preferredTZ="America/New_York"):
+def getProbables(g,tvTeam=None,preferredTZ="America/New_York",verbose=True):
 	if g == None:
 		return None
-	
-	awayAbbr = g["teams"]["away"]["team"]["abbreviation"]
-	homeAbbr = g["teams"]["home"]["team"]["abbreviation"]
-	
-	runningStr = getPitcher(g,"away") + " at " + getPitcher(g,"home")
-	
+
+	if not verbose:
+		runningStr = g["teams"]["away"]["team"]["teamName"] + " at " + g["teams"]["home"]["team"]["teamName"]
+	else:
+		runningStr = getPitcher(g,"away") + " at " + getPitcher(g,"home")
+
 	if is_doubleheader(g):
 		runningStr += ' (game ' + str(g["gameNumber"]) + ')'
-	
 	runningStr += " starts at " + iso8601toLocalTZ(g["gameDate"]) + "."
 	
-	if tvTeam and (g["gameType"] not in PLAYOFF_GAME_TYPES) and (tvTeam not in ("suppress","scoreboard","schedule")):
-		# if playoff game, we don't want to show the TV network as part of pregame because we'll always add it later
-		
-		# lazy default here
-		homeaway = "home"
-		if tvTeam == awayAbbr:
-			homeaway = "away"
-		try:
-			bcast = getTVNets(g,homeaway)
-			if bcast:
-				runningStr += " TV broadcast is on " + bcast + "."
-			else:
-				runningStr += " No TV."
-		except Exception as e:
-			print("bcast exception:" + str(e))
-			pass	
+	if tvTeam and (tvTeam not in ("suppress","scoreboard","schedule")):
+		# we used to suppress playoff display here. I don't think we need to anymore.
+		#homeAbbr if we ever want that: = g["teams"]["home"]["team"]["abbreviation"]
+		homeaway = "away" if tvTeam == g["teams"]["away"]["team"]["abbreviation"] else "home"
+		runningStr += " TV: " + getTVNets(g,homeaway) + "."
 	
 	return runningStr
 
