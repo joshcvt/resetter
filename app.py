@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from crypt import methods
 from chalice import Chalice
 from chalicelib.main import get_team
 
@@ -29,3 +30,10 @@ def index():
 	
 	return { "response_type": "in_channel", "text": rtext }
 
+@app.route('tv-wsh',methods=['GET'])
+def tvScoreboard():
+	# let's not mince words, this is a horrible, hacky way to do this
+	alllines = get_team("scoreboard").split('\n')
+	filt = list(filter(lambda a: "TV" in a, alllines))
+	rtext = '\n'.join(filt)
+	return { "response_type": "in_channel", "text": rtext }
