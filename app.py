@@ -12,6 +12,7 @@ app = Chalice(app_name='resetter')
 @app.route('/',methods=['GET'])
 def index():
 	"""Route used for Slack"""
+	inOverride = False
 	try:
 		team = app.current_request.query_params['text']
 		if team == '':
@@ -22,18 +23,13 @@ def index():
 	# allows /scoreboard
 	try:
 		team = app.current_request.query_params['override']
+		if "tv-" in team:
+			team = team.strip().split("-")[1]
+			inOverride = "tv"
 	except:
 		pass
 
 	print("getting for team " + team)
-	rtext = get_team(team)
+	rtext = get_team(team,override=inOverride)
 	
-	return { "response_type": "in_channel", "text": rtext }
-
-@app.route('tv-wsh',methods=['GET'])
-def tvScoreboard():
-	# let's not mince words, this is a horrible, hacky way to do this
-	alllines = get_team("scoreboard").split('\n')
-	filt = list(filter(lambda a: "TV" in a, alllines))
-	rtext = '\n'.join(filt)
 	return { "response_type": "in_channel", "text": rtext }

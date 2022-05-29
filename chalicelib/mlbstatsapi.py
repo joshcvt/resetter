@@ -11,6 +11,8 @@ from .reset_lib import NoGameException, NoTeamException, DabException
 
 ROLLOVER_LOCALTIME_INT = 1000		# for resetter this is UTC because Lambda runs in UTC
 PLAYOFF_GAME_TYPES = ['F','D','L','W']
+FILTER_STANDARD = "FILTER_STANDARD"
+FILTER_OVERRIDETV = "FILTER_OVERRIDETV"
 
 #logLevel = logging.DEBUG
 #logFN = "resetter.log"
@@ -21,6 +23,7 @@ def iso8601toLocalTZ(isoUTC,preferredTZName="America/New_York"):
 	localGameTime = gameTime.replace(tzinfo=timezone.utc).astimezone(ZoneInfo(preferredTZName))
 	return localGameTime.strftime("%-I:%M ") + localGameTime.tzname()
 
+"""Find relevant game nodes (to team or "schedule"/"scoreboard") and filter out the rest."""
 def findGameNodes(sapiDict,team):
 	ret = []
 
@@ -80,7 +83,7 @@ def is_doubleheader(g):
 	return (g["doubleHeader"] in ("Y","S"))
 
 
-def getReset(g,team,fluidVerbose):
+def getReset(g,team,fluidVerbose,filterMode=FILTER_STANDARD):
 	if g == None:
 		return "No game today."
 
@@ -88,6 +91,12 @@ def getReset(g,team,fluidVerbose):
 	reset = ""
 	is_dh = is_doubleheader(g)
 	
+	if filterMode == FILTER_OVERRIDETV:
+		if team not in (g["teams"]["away"]["team"]["abbreviation"],g["teams"]["home"]["team"]["abbreviation"]):
+			# in this situation, we want to return TV only if it's a national game. 
+			# If there's no TV coming back, eventually this game will get discarded.
+			team = "scoreboard"
+
 	if stat in PREGAME_STATUS_CODES:
 		reset += getProbables(g,team,verbose=fluidVerbose)
 
@@ -169,6 +178,8 @@ def getReset(g,team,fluidVerbose):
 		reset += "."
 	
 	#print "getting out of the reset with " + reset
+	if filterMode == FILTER_OVERRIDETV and "TV: " not in reset:
+		return None
 	return reset
 	
 	
@@ -249,11 +260,14 @@ def getProbables(g,tvTeam=None,preferredTZ="America/New_York",verbose=True):
 	return runningStr
 
 
-def launch(team,fluidVerbose=True,rewind=False,ffwd=False):
+def launch(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False):
 
 	#logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',filename=logFN, level=logLevel)
 	
 	localRollover = ROLLOVER_LOCALTIME_INT
+	filterMode = FILTER_STANDARD
+	if "tv" == inOverride:
+		filterMode = FILTER_OVERRIDETV
 	
 	# for testing
 	if rewind:
@@ -278,7 +292,12 @@ def launch(team,fluidVerbose=True,rewind=False,ffwd=False):
 	sapiScoreboard = loadSAPIScoreboard(statsApiScheduleUrl,todayDT)
 	
 	if sapiScoreboard:
-		gns = findGameNodes(sapiScoreboard,vtoc[team])
+		# this is where it gets a little different for the override case. for override=tv, we want to
+		# get a full scoreboard, but do something special with the team.
+		if filterMode == FILTER_OVERRIDETV:
+			gns = findGameNodes(sapiScoreboard,vtoc["scoreboard"])
+		else:
+			gns = findGameNodes(sapiScoreboard,vtoc[team])
 	else:
 		gns = []
 	
@@ -291,7 +310,8 @@ def launch(team,fluidVerbose=True,rewind=False,ffwd=False):
 	
 	rv = []
 	for gn in gns:
-		rv.append(getReset(gn,vtoc[team],fluidVerbose))
+		resetVal = getReset(gn,vtoc[team],fluidVerbose, filterMode)
+		rv.append(resetVal) if resetVal else None
 		#print "rv is " + str(rv)
 	
 	return rv

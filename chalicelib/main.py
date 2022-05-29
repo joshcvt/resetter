@@ -7,7 +7,7 @@ from .ncaaf_espn import get as get_ncaaf
 from .nhl import get as get_nhl
 from .reset_lib import joinOr, NoGameException, NoTeamException, DabException
 
-def get_team(team,debug=False):
+def get_team(team,debug=False,inOverride=False):
 
 	hold = None
 	retList = None
@@ -22,7 +22,10 @@ def get_team(team,debug=False):
 			print("got " + team + ", " + sport)
 		if sport in fns:
 			try:
-				rv = fns[sport](team)
+				if inOverride:
+					rv = fns[sport](team,inOverride=inOverride)
+				else:
+					rv = fns[sport](team)
 				if rv:
 					return rtext(rv)
 			#except NoGameException as e:
@@ -41,7 +44,11 @@ def get_team(team,debug=False):
 				print("calling " + k, end=' ')
 			
 			try:
-				rv = fns[k](team)
+				# this is temporary until/unless we implement inOverride across all the sport providers
+				if inOverride:
+					rv = fns[k](team,inOverride=inOverride)
+				else:
+					rv = fns[k](team)
 				if rv:
 					return rtext(rv)
 			except Exception as e:
