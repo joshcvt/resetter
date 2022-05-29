@@ -30,6 +30,6 @@ def index():
 		pass
 
 	print("getting for team " + team)
-	rtext = get_team(team,override=inOverride)
+	rtext = get_team(team,inOverride=inOverride)
 	
 	return { "response_type": "in_channel", "text": rtext }
