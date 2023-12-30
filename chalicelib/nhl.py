@@ -1,16 +1,22 @@
 #!/usr/bin/env python
 #encoding: utf-8
 
-import urllib.request, urllib.error, urllib.parse, json, time
+#import urllib.request, urllib.error, urllib.parse, 
+import json, time
+from urllib.request import Request, urlopen
 from datetime import datetime, timedelta
-from .reset_lib import joinOr, sentenceCap, NoGameException, NoTeamException, DabException
+from .reset_lib import joinOr, sentenceCap, toOrdinal, NoGameException, NoTeamException, DabException
 from string import capwords
 
 intRolloverUtcTime = 1000
 
 preferredTZ = ({"offset":-5,"tz":"EST"},{"offset":-4,"tz":"EDT"})
 
-SCOREBOARD_URL_JSON = "https://statsapi.web.nhl.com/api/v1/schedule?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&expand=schedule.teams,schedule.linescore,schedule.broadcasts.all,schedule.ticket,schedule.game.content.media.epg,schedule.radioBroadcasts,schedule.decisions,schedule.scoringplays,schedule.game.content.highlights.scoreboard,team.leaders,schedule.game.seriesSummary,seriesSummary.series&leaderCategories=points,goals,assists&leaderGameTypes=R&site=en_nhl&teamId=&gameType=&timecode="
+#SCOREBOARD_URL_JSON = "https://statsapi.web.nhl.com/api/v1/schedule?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&expand=schedule.teams,schedule.linescore,schedule.broadcasts.all,schedule.ticket,schedule.game.content.media.epg,schedule.radioBroadcasts,schedule.decisions,schedule.scoringplays,schedule.game.content.highlights.scoreboard,team.leaders,schedule.game.seriesSummary,seriesSummary.series&leaderCategories=points,goals,assists&leaderGameTypes=R&site=en_nhl&teamId=&gameType=&timecode="
+SCOREBOARD_URL_JSON = "https://api-web.nhle.com/v1/schedule/YYYY-MM-DD"
+SCORENOW_URL_JSON = "https://api-web.nhle.com/v1/score/now"
+
+DEBUG_LEVEL = "DEBUG"
 
 validTeams = ("rangers","islanders","capitals","flyers","penguins","blue jackets","hurricanes","devils",
     "red wings","sabres","maple leafs","senators","canadiens","bruins","panthers","lightning",
@@ -22,19 +28,45 @@ dabBacks = {
     "ny":["Rangers","Islanders"]
 }
 
-derefs = { "rangers":["nyr","blueshirts"],"islanders":["isles","nyi","brooklyn"],"capitals":["caps","was","washington","dc"],
-    "flyers":["philly","phl","philadelphia"],"penguins":["pens","pittsburgh","pit","pgh"],"blue jackets":["bluejackets","lumbus","cbj","bjs","bj's","columbus"],
-    "hurricanes":["carolina","canes","car","jerks","whale","whalers","hartford","brass bonanza"],"devils":["nj","njd","jersey","devs","new jersey"],
-    "red wings":["wings","det","detroit"],"sabres":["buffalo","buf"],"maple leafs":["leafs","buds","toronto","tor"],
-    "senators":["sens","ottawa"],"canadiens":["habs","montreal",'montréal'],"bruins":["b's","bs","boston"],
-    "panthers":["florida",'cats',"fla"],"lightning":["bolts","tb","tampa","tampa bay"],
-    "predators":["preds","nashville","nsh","perds"],"blackhawks":['chi',"chicago",'hawks'],"blues":['stl',"st. louis","st louis"],"wild":['min',"minnesota"],
-    "jets":["no parks","peg","winnipeg"],"stars":["dallas","northstars","north stars"],
-    "avalanche":['avs','col','colorado'],
-    "oilers":['edm','oil',"edmonton"],"flames":['cgy','calgary'],"canucks":['nucks','van','vancouver'],
-    "sharks":['sj','san jose','san josé'],"kings":['la','lak',"los angeles"],"ducks":['ana','anaheim','mighty ducks'],
-    "coyotes":['phx','ari','arizona','yotes',"phoenix"],"golden knights":['vegas','lv','knights',"vgk","las vegas"],
-    "kraken":['sea','seattle','krak']
+NHL_TEAMNAME_AS_PLACENAME = ["Rangers","Islanders"]
+
+# scoreboard for the new API only reliably gives you "id","abbrev","placeName"["default"]
+abbrDerefs = {
+    'MTL':["canadiens","habs","montreal",'montréal'],
+    'TOR':["maple leafs","leafs","buds","toronto","tor"],
+    'OTT':["senators","sens","ottawa"],
+    'FLA':["panthers","florida",'cats',"fla"],
+    'TBL':["lightning","bolts","tb","tampa","tampa bay"],
+    'BUF':["sabres","buffalo","buf"],
+    'BOS':["bruins","b's","bs","boston"],
+    'DET':["red wings","wings","det","detroit"],
+
+    'CAR':["hurricanes","carolina","canes","car","jerks","whale","whalers","hartford","brass bonanza"],
+    'WSH':["capitals","caps","was","washington","dc"],
+    'NYR':["rangers","nyr","blueshirts"],
+    'NYI':["islanders","isles","nyi","brooklyn"],
+    'NJD':["devils","nj","njd","jersey","devs","new jersey"],
+    'PHI':["flyers","philly","phl","philadelphia"],
+    'PIT':["penguins","pens","pittsburgh","pit","pgh"],
+    'CBJ':["blue jackets","bluejackets","lumbus","cbj","bjs","bj's","columbus"],
+
+    'MIN':["wild",'min',"minnesota"],
+    'WPG':["jets","no parks","peg","winnipeg"],
+    'CHI':["blackhawks",'chi',"chicago",'hawks'],
+    'NSH':["predators","preds","nashville","nsh","perds"],
+    'DAL':["stars","dallas","northstars","north stars"],
+    'ARI':["coyotes",'phx','ari','arizona','yotes',"phoenix"],
+    'STL':["blues",'stl',"st. louis","st louis"],
+    'COL':["avalanche",'avs','col','colorado'],
+
+    'LAK':["kings",'la','lak',"los angeles"],
+    'VGK':["golden knights",'vegas','lv','knights',"vgk","las vegas"],
+    'SJS':[ "sharks",'sj','san jose','san josé'],
+    'ANA':["ducks",'ana','anaheim','mighty ducks'],
+    'EDM':["oilers",'edm','oil',"edmonton"],
+    'VAN':["canucks",'nucks','van','vancouver'],
+    'CGY':["flames",'cgy','calgary'],
+    'SEA':["kraken",'sea','seattle','krak']
 }
 
 __MOD = {}
@@ -43,24 +75,14 @@ __MOD = {}
 class TzFailedUseLocalException(Exception):
     pass
 
+def debug(text):
+    if DEBUG_LEVEL == "DEBUG":
+        print(text)
+    return
+
 def todayIsDst(sb):
-    # Using US margins, and in marginal weeks check the scoreboard to see if any games 
-    # are being played in a DT zone. it's sloppy, but the only time this should get tricked 
-    # is if the only game of the day is in Arizona, which is unlikely.
-    # the proper way to do this is to package tzinfo in, of course, but I'd rather save
-    # the resources in a non-mission-critical setting.
-    
-    today = datetime.utcnow() + timedelta(hours=preferredTZ[0]["offset"])
-    if (today.month in (12,1,2)) or (today.month == 3 and today.day < 8) or (today.month == 11 and today.day > 7):
-        return False
-    elif (today.month in (4,5,6,7,8,9,10)) or (today.month == 3 and today.day > 14):
-        return True
-    
     try:
-        for game in sb["dates"][0]["games"]:
-            zone = game["teams"]["home"]["team"]["venue"]["timeZone"]
-            if zone["tz"][-2] == "D":
-                return True
+        return (sb['gameWeek'][0]['games'][0]['easternUTCOffset'] == "-04:00")
     except:
         raise TzFailedUseLocalException
     
@@ -69,8 +91,9 @@ def todayIsDst(sb):
 def buildVarsToCode():
     vtoc = {}
     
-    for k in derefs:
-        for var in derefs[k]:
+    for k in abbrDerefs:
+        for var in abbrDerefs[k]:
+            
             if var.lower() in vtoc:
                 raise Exception("OOPS: trying to duplicate pointer " + var + " as " + k + ", it's already " + vtoc[var])
             else:
@@ -78,41 +101,52 @@ def buildVarsToCode():
         # and before we go, do k = k too
         vtoc[k.lower()] = k    # it's already upper
     
+    #print(vtoc)
     return vtoc
 
 def get_scoreboard(file=None,fluidVerbose=False,rewind=False,ffwd=False):
     """Get scoreboard from site, or from file if specified for testing."""
 
+    global __MOD
+
     if file:
+        # we're just going to use this as scoreboard rather than scorenow for the moment.
         fh = open(file)
+        sb = json.loads(fh.read())
+        __MOD["date"] = sb['gameWeek'][0]['date']
     else:
         localRollover = intRolloverUtcTime
-    
-        if rewind:
-            # force yesterday's games by making the rollover absurd.
-            localRollover += 2400
-        if ffwd:
-            localRollover -= 2400
-    
-        todayDT = datetime.utcnow() - timedelta(minutes=((localRollover/100)*60+(localRollover%100)))
-        todayScoreboardUrl = SCOREBOARD_URL_JSON.replace("YYYY-MM-DD",todayDT.strftime("%Y-%m-%d"))
-    
-        #opener = urllib2.build_opener()
-        #opener.addheaders = [('User-agent', 'Mozilla/5.0')]
-        #urllib2.install_opener(opener)
-        fh = urllib.request.urlopen(todayScoreboardUrl)    
-    
-    raw = fh.read()
-    return json.loads(raw)
 
-def get_game(sb,nickname):
-    # nickname is lowercase team nick.
+        if not (rewind or ffwd):
+            todayScoreboardUrl = SCORENOW_URL_JSON
+        else:    
+            if rewind:
+                # force yesterday's games by making the rollover absurd.
+                localRollover += 2400
+            if ffwd:
+                localRollover -= 2400
+        
+            todayDT = datetime.utcnow() - timedelta(minutes=((localRollover/100)*60+(localRollover%100)))
+            __MOD["date"] = todayDT.strftime("%Y-%m-%d")
+            todayScoreboardUrl = SCOREBOARD_URL_JSON.replace("YYYY-MM-DD",__MOD["date"])
+
+        req = Request(todayScoreboardUrl)
+        req.add_header('User-agent', 'Mozilla/5.0')
+        raw = json.loads(urlopen(req).read())
+    
+    if (rewind or ffwd):
+        return raw["gameWeek"][0]["games"]
+    else:
+        return raw["games"]
+
+def get_game(sb,teamAbbr):
+    # teamAbbr from table above; date is YYYY-mm-dd
     
     g = None
     
     try:
-        for game in sb["dates"][0]["games"]:
-            if nickname in (game["teams"]["away"]["team"]["teamName"].lower(), game["teams"]["home"]["team"]["teamName"].lower()):
+        for game in sb:
+            if teamAbbr.upper() in (game["awayTeam"]["abbrev"], game["homeTeam"]["abbrev"]):
                 if not g:
                     g = game
                 elif g.__class__ != list:    # preseason split squad can trigger this
@@ -122,28 +156,22 @@ def get_game(sb,nickname):
     except IndexError:
         pass    # no games today
     except Exception as e:
-        print("game get blew out on something not IndexError: " + str(e))
+        print("get_game blew out on something not IndexError: " + str(e))
     
     return g
 
 def game_loc(game):
+    loc = "at " + game["venue"]["default"].strip()
+    return loc
 
-    try:
-        if game["venue"]["name"].strip().lower() == game["teams"]["home"]["team"]["venue"]["name"].strip().lower():
-            return "in " + game["teams"]["home"]["team"]["venue"]["city"].strip()
-        
-        # #9: special case if they enter one in French and the other in English. These are the times that try software developers' souls.
-        elif (((game["venue"]["name"].strip().lower() == "centre bell") and (game["teams"]["home"]["team"]["venue"]["name"].strip().lower() == "bell centre")) or ((game["venue"]["name"].strip().lower() == "bell centre") and (game["teams"]["home"]["team"]["venue"]["name"].strip().lower() == "centre bell"))):
-            return "in Montreal"    # they also put the utf-8 character in this field, which freaks out Python 2. to fix when we go to 3.
-    except:
-        pass
-    
-    return "at " + game["venue"]["name"].strip()
 
 def teamDisplayName(team):
-    """we have this because Montreal venue/Montréal teamloc and St. Louis venue/St Louis shortname looks dumb."""
+    if "name" in team.keys():
+        return team["name"]["default"]
+    # else the scoreboard version which has placeName but not name
+    #"""we have this because Montreal venue/Montréal teamloc and St. Louis venue/St Louis shortname looks dumb."""
     overrides = {'Montréal':'Montreal','St Louis':'St. Louis'}
-    sname = team["team"]["shortName"]
+    sname = team["placeName"]["default"]
     if sname in overrides:
         return overrides[sname]
     else:
@@ -151,11 +179,11 @@ def teamDisplayName(team):
 
 def scoreline(game):
     
-    leader = game["teams"]["away"]
-    trailer = game["teams"]["home"]
-    if game["teams"]["home"]["score"] > game["teams"]["away"]["score"]:
-        leader = game["teams"]["home"]
-        trailer = game["teams"]["away"]
+    leader = game["awayTeam"]
+    trailer = game["homeTeam"]
+    if game["homeTeam"]["score"] > game["awayTeam"]["score"]:
+        leader = game["homeTeam"]
+        trailer = game["awayTeam"]
     # by default list away team first in a tie, because this is North American
     return teamDisplayName(leader) + " " + str(leader["score"]) + ", " + teamDisplayName(trailer) + " " + str(trailer["score"])
 
@@ -169,21 +197,25 @@ def local_game_time(game):
     
     global __MOD    
             
-    gameutc = datetime.strptime(game['gameDate'],'%Y-%m-%dT%H:%M:%SZ')
+    gameutc = datetime.strptime(game['startTimeUTC'],'%Y-%m-%dT%H:%M:%SZ')
     startdelay = datetime.utcnow() - gameutc
-    
     if (__MOD["dst"] == "local"):
         # tz is name, offset is hrs off
-        homezone = game["teams"]["home"]["team"]["venue"]["timeZone"]
+        homezoneName = game["venueTimezone"]
+        homezoneOffset = game["venueUTCOffset"].split(':')[0]
     else:
         if __MOD["dst"]:
             idx = 1
         else:
             idx = 0
-        homezone = preferredTZ[idx]        
+        homezoneOffset = preferredTZ[idx]["offset"]
+        homezoneName = preferredTZ["name"]
     
-    gamelocal = gameutc + timedelta(hours=(homezone["offset"]))
-    printtime = gamelocal.strftime("%I:%M %p") + " " + homezone["tz"]    
+    if homezoneName.startswith("US/"):
+        homezoneName = homezoneName.replace("US/","")
+    homezoneOffset = int(homezoneOffset)
+    gamelocal = gameutc + timedelta(hours=(homezoneOffset))
+    printtime = gamelocal.strftime("%I:%M %p") + " " + homezoneName 
 
     if printtime[0] == '0':
         printtime = printtime[1:]
@@ -196,35 +228,39 @@ def local_game_time(game):
     
 
 def game_time_set(game):
+    # assumption: we're only getting a LIVE game here from the SCORENOW endpoint.
 
-    trem = game["linescore"]["currentPeriodTimeRemaining"].strip()
+    if game["clock"]["inIntermission"]:
+        pd = toOrdinal(game["period"])
+        if pd in ("3rd","4th"):
+            return "going to overtime"
+        elif pd not in ("1st","2nd"):
+            print("WAIT WHAT INTERMISSION IS THIS: " +pd)
+        return "at the " + pd + " intermission"
+
+    trem = game["clock"]["timeRemaining"].strip()
     if trem.startswith("0"):
         trem = trem[1:]
-    pd = game["linescore"]["currentPeriodOrdinal"].strip()
+    pd = toOrdinal(game["period"])
+    
     if trem == '20:00':
         return "start of the " + pd
     elif trem == 'END':
-        
         if pd == "3rd":
             return "at the end of regulation"
-        elif game["linescore"]["intermissionInfo"]["inIntermission"]:
-            if pd in ("1st","2nd"):
-                return "at the " + pd + " intermission"
-            else:
-                print("intermission but it's overtime/so, LOOK AT THIS")
-                print(json.dumps(game,sort_keys=True, indent=4, separators=(',', ': ')))
-                return "at the " + pd + " intermission"
         else:
             if pd == "OT":
                 # you might catch a situation where the game's over, but they don't know it yet
-                if game["teams"]["home"]["score"] != game["teams"]["away"]["score"]:
+                if game["homeTeam"]["score"] != game["awayTeam"]["score"]:
                     return "final in overtime"
                 else:
                     return "after overtime"
             else:
                 return "end of the " + pd
     else:
-        if pd != "OT":
+        if pd == "4th":
+            pd = "OT"
+        elif pd != "OT":
             pd = "the " + pd
         return trem + " to go in " + pd
 
@@ -232,13 +268,13 @@ def final_qualifier(game):
     """return 'in overtime' or 'in a shootout' if appropriate for the 
     final score. Assume the game went there."""
     
-    if game["linescore"]["currentPeriodOrdinal"] == "OT":
+    if game["gameOutcome"]["lastPeriodType"] == "OT":
         return " in overtime"
-    elif game["linescore"]["currentPeriodOrdinal"] == "SO":
+    elif game["gameOutcome"]["lastPeriodType"] == "SO":
         return " in a shootout"
-    elif game["linescore"]["currentPeriod"] > 3:
-        print("this is weird: period is " + game["linescore"]["currentPeriodOrdinal"])
-        return " in " + game["linescore"]["currentPeriodOrdinal"]
+    elif game["periodDescriptor"]["number"] > 3:
+        print("this is weird: period is " + game["periodDescriptor"]["number"] + ", lastPeriodType is " + game["gameOutcome"]["lastPeriodType"])
+        return " in " + game["gameOutcome"]["lastPeriodType"]
     else:
         return ""
 
@@ -253,19 +289,21 @@ def fix_for_delay(ret):
 
 def phrase_game(game):
 
-    status = int(game["status"]["statusCode"])
-    
-    if status in (1,2):        # scheduled, pregame
+    status = game["gameState"]
+
+    if status in ("PRE","FUT"):        # scheduled, pregame
         loc = game_loc(game)
-        if loc.startswith("at"):    # unusual venue
-            ret = teamDisplayName(game["teams"]["away"])
-            ret += " play " if (ret.startswith("NY") and ret.endswith("s")) else " plays "
-            ret += teamDisplayName(game["teams"]["home"]) + " " + game_loc(game)
+        ret = teamDisplayName(game["awayTeam"])
+        homeTeam = teamDisplayName(game["homeTeam"])
+        if (ret in NHL_TEAMNAME_AS_PLACENAME or ("placeName" not in game["awayTeam"])):
+            ret = "the " + ret + " visit "
         else:
-            ret = teamDisplayName(game["teams"]["away"])
-            ret += " visit " if (ret.startswith("NY") and ret.endswith("s")) else " visits "
-            ret += teamDisplayName(game["teams"]["home"])
-        
+            ret += " visits "
+        ret += "the " if (homeTeam in NHL_TEAMNAME_AS_PLACENAME or ("placeName" not in game["homeTeam"])) else "" 
+        ret += homeTeam
+        if game["neutralSite"]:    # unusual venue
+            ret = (ret.replace(" play"," visit") + game_loc(game))
+
         try:
             gametime = local_game_time(game)
             ret += " at " + gametime + "."
@@ -275,35 +313,34 @@ def phrase_game(game):
         except LateStartException as lse:
             ret = fix_for_delay(ret)
             ret += ", scheduled for " + str(lse) + ", is delayed (or the league web site has no data)."
-        
         return ret
         
-    elif status in (3,4):    # in progress, in progress - critical
+    elif status in ("LIVE","CRIT"):    # in progress, critical
         base = game_loc(game) + ", " + scoreline(game)
         timeset = game_time_set(game)
         if not timeset.startswith("at "):
             base += ","
         return base + " " + timeset + "."
     
-    elif status in (5,6,7):    # final, game over
-        # final
-        return "Final " + game_loc(game) + ", " + scoreline(game) + final_qualifier(game) + "."
+    elif status in ("FINAL","OFF"):    # final, official
+        ret = "Final " + game_loc(game) + ", " + scoreline(game) + final_qualifier(game) + "."
+        return ret
         
-    elif (status == 9): # postponed
-        ret = teamDisplayName(game["teams"]["away"])
+    elif (status == 9): # postponed TODO TODO TODO TODO TODO TODO
+        ret = teamDisplayName(game["awayTeam"])
         loc = game_loc(game)
         if loc.startswith("at"):
             ret += " vs. "
         else:
             ret += " at "
-        ret += teamDisplayName(game["teams"]["home"])
+        ret += teamDisplayName(game["homeTeam"])
         if loc.startswith("at"):
             ret += " " + game_loc(game)
         ret += " is postponed."
         return ret
         
     else:
-        return "HELP, I don't understand gamestatus " + str(status) + " " + game["status"]["detailedState"] + " yet for " + game["teams"]["away"]["team"]["teamName"] + " at " + game["teams"]["home"]["team"]["teamName"]
+        return "HELP, I don't understand gamestatus " + str(status) + " yet for " + str(game)
     
         
 def get(team,fluidVerbose=False,rewind=False,ffwd=False):
@@ -322,6 +359,7 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
         raise NoTeamException
     
     sb = get_scoreboard(fluidVerbose=fluidVerbose,rewind=rewind,ffwd=ffwd)
+    # what we should have now is the ["games"] list. which is fine raw if it's "scoreboard" but needs processing if 
     #print json.dumps(sb, sort_keys=True, indent=4, separators=(',', ': '))
     try:
         __MOD["dst"] = todayIsDst(sb)
@@ -331,14 +369,7 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
     ret = ""
     
     if tkey == "scoreboard":
-        try:
-            game = sb["dates"][0]["games"]
-        except IndexError:
-            game = []
-        except Exception as e:        # keyerror or index error means scoreboard is blown out
-            print("full scoreboard get blew out, not IndexError\n" + str(e))    # for logging
-            game = []
-    
+        game = sb
     else:
         game = get_game(sb,vtoc[tkey])
     
