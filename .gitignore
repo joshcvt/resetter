@@ -9,3 +9,5 @@
 samples/
 
 .vscode/
+.venv/
+
