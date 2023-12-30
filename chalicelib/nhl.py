@@ -14,6 +14,7 @@ preferredTZ = ({"offset":-5,"tz":"EST"},{"offset":-4,"tz":"EDT"})
 
 #SCOREBOARD_URL_JSON = "https://statsapi.web.nhl.com/api/v1/schedule?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&expand=schedule.teams,schedule.linescore,schedule.broadcasts.all,schedule.ticket,schedule.game.content.media.epg,schedule.radioBroadcasts,schedule.decisions,schedule.scoringplays,schedule.game.content.highlights.scoreboard,team.leaders,schedule.game.seriesSummary,seriesSummary.series&leaderCategories=points,goals,assists&leaderGameTypes=R&site=en_nhl&teamId=&gameType=&timecode="
 SCOREBOARD_URL_JSON = "https://api-web.nhle.com/v1/schedule/YYYY-MM-DD"
+SCORENOW_URL_JSON = "https://api-web.nhle.com/v1/score/now"
 
 DEBUG_LEVEL = "DEBUG"
 
@@ -109,45 +110,49 @@ def get_scoreboard(file=None,fluidVerbose=False,rewind=False,ffwd=False):
     global __MOD
 
     if file:
+        # we're just going to use this as scoreboard rather than scorenow for the moment.
         fh = open(file)
         sb = json.loads(fh.read())
         __MOD["date"] = sb['gameWeek'][0]['date']
     else:
         localRollover = intRolloverUtcTime
-    
-        if rewind:
-            # force yesterday's games by making the rollover absurd.
-            localRollover += 2400
-        if ffwd:
-            localRollover -= 2400
-    
-        todayDT = datetime.utcnow() - timedelta(minutes=((localRollover/100)*60+(localRollover%100)))
-        __MOD["date"] = todayDT.strftime("%Y-%m-%d")
-        todayScoreboardUrl = SCOREBOARD_URL_JSON.replace("YYYY-MM-DD",__MOD["date"])
-        #print("getting " + todayScoreboardUrl)
+
+        if not (rewind or ffwd):
+            todayScoreboardUrl = SCORENOW_URL_JSON
+        else:    
+            if rewind:
+                # force yesterday's games by making the rollover absurd.
+                localRollover += 2400
+            if ffwd:
+                localRollover -= 2400
+        
+            todayDT = datetime.utcnow() - timedelta(minutes=((localRollover/100)*60+(localRollover%100)))
+            __MOD["date"] = todayDT.strftime("%Y-%m-%d")
+            todayScoreboardUrl = SCOREBOARD_URL_JSON.replace("YYYY-MM-DD",__MOD["date"])
 
         req = Request(todayScoreboardUrl)
         req.add_header('User-agent', 'Mozilla/5.0')
-        sb = json.loads(urlopen(req).read())
+        raw = json.loads(urlopen(req).read())
     
-    return sb
+    if (rewind or ffwd):
+        return raw["gameWeek"][0]["games"]
+    else:
+        return raw["games"]
 
-def get_game(sb,teamAbbr,date):
+def get_game(sb,teamAbbr):
     # teamAbbr from table above; date is YYYY-mm-dd
     
     g = None
     
     try:
-        for gameday in sb["gameWeek"]:
-            if gameday["date"] == date:
-                for game in gameday["games"]:
-                    if teamAbbr.upper() in (game["awayTeam"]["abbrev"], game["homeTeam"]["abbrev"]):
-                        if not g:
-                            g = game
-                        elif g.__class__ != list:    # preseason split squad can trigger this
-                            g = [g, game]
-                        else:
-                            g.append(game)
+        for game in sb:
+            if teamAbbr.upper() in (game["awayTeam"]["abbrev"], game["homeTeam"]["abbrev"]):
+                if not g:
+                    g = game
+                elif g.__class__ != list:    # preseason split squad can trigger this
+                    g = [g, game]
+                else:
+                    g.append(game)
     except IndexError:
         pass    # no games today
     except Exception as e:
@@ -161,7 +166,10 @@ def game_loc(game):
 
 
 def teamDisplayName(team):
-    """we have this because Montreal venue/Montréal teamloc and St. Louis venue/St Louis shortname looks dumb."""
+    if "name" in team.keys():
+        return team["name"]["default"]
+    # else the scoreboard version which has placeName but not name
+    #"""we have this because Montreal venue/Montréal teamloc and St. Louis venue/St Louis shortname looks dumb."""
     overrides = {'Montréal':'Montreal','St Louis':'St. Louis'}
     sname = team["placeName"]["default"]
     if sname in overrides:
@@ -191,12 +199,10 @@ def local_game_time(game):
             
     gameutc = datetime.strptime(game['startTimeUTC'],'%Y-%m-%dT%H:%M:%SZ')
     startdelay = datetime.utcnow() - gameutc
-    debug("gameutc: " + str(gameutc))
     if (__MOD["dst"] == "local"):
         # tz is name, offset is hrs off
         homezoneName = game["venueTimezone"]
         homezoneOffset = game["venueUTCOffset"].split(':')[0]
-        debug("got homezone " + homezoneName + " " + str(homezoneOffset))
     else:
         if __MOD["dst"]:
             idx = 1
@@ -205,8 +211,7 @@ def local_game_time(game):
         homezoneOffset = preferredTZ[idx]["offset"]
         homezoneName = preferredTZ["name"]
     
-    debug("got homezone " + homezoneName + " " + str(homezoneOffset))
-
+    homezoneOffset = int(homezoneOffset)
     gamelocal = gameutc + timedelta(hours=(homezoneOffset))
     printtime = gamelocal.strftime("%I:%M %p") + " " + homezoneName 
 
@@ -302,7 +307,6 @@ def phrase_game(game):
         except LateStartException as lse:
             ret = fix_for_delay(ret)
             ret += ", scheduled for " + str(lse) + ", is delayed (or the league web site has no data)."
-        debug("phrase_game pre about to return " + ret)
         return ret
         
     elif status in ("LIVE"):    # in progress, ??in progress - critical TODO TODO TODO TODO TODO
@@ -349,6 +353,7 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
         raise NoTeamException
     
     sb = get_scoreboard(fluidVerbose=fluidVerbose,rewind=rewind,ffwd=ffwd)
+    # what we should have now is the ["games"] list. which is fine raw if it's "scoreboard" but needs processing if 
     #print json.dumps(sb, sort_keys=True, indent=4, separators=(',', ': '))
     try:
         __MOD["dst"] = todayIsDst(sb)
@@ -358,20 +363,9 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
     ret = ""
     
     if tkey == "scoreboard":
-        try:
-            game = []
-            for gameday in sb['gameWeek']:
-                if gameday["date"] == __MOD["date"]:
-                    game = gameday['games']
-                    break
-        except IndexError:
-            game = []
-        except Exception as e:        # keyerror or index error means scoreboard is blown out
-            print("full scoreboard get blew out, " + str(e))    # for logging
-            game = []
-        
+        game = sb
     else:
-        game = get_game(sb,vtoc[tkey],__MOD["date"])
+        game = get_game(sb,vtoc[tkey])
     
     if not game:    # valid for game = [] as well
         if game.__class__ == list:
