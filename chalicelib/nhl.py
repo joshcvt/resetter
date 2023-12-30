@@ -5,7 +5,7 @@
 import json, time
 from urllib.request import Request, urlopen
 from datetime import datetime, timedelta
-from .reset_lib import joinOr, sentenceCap, NoGameException, NoTeamException, DabException
+from .reset_lib import joinOr, sentenceCap, toOrdinal, NoGameException, NoTeamException, DabException
 from string import capwords
 
 intRolloverUtcTime = 1000
@@ -211,6 +211,8 @@ def local_game_time(game):
         homezoneOffset = preferredTZ[idx]["offset"]
         homezoneName = preferredTZ["name"]
     
+    if homezoneName.startswith("US/"):
+        homezoneName = homezoneName.replace("US/","")
     homezoneOffset = int(homezoneOffset)
     gamelocal = gameutc + timedelta(hours=(homezoneOffset))
     printtime = gamelocal.strftime("%I:%M %p") + " " + homezoneName 
@@ -226,24 +228,26 @@ def local_game_time(game):
     
 
 def game_time_set(game):
+    # assumption: we're only getting a LIVE game here from the SCORENOW endpoint.
 
-    trem = game["linescore"]["currentPeriodTimeRemaining"].strip()
+    if game["clock"]["inIntermission"]:
+        pd = toOrdinal(game["period"])
+        if pd in ("3rd","4th"):
+            return "going to overtime"
+        elif pd not in ("1st","2nd"):
+            print("WAIT WHAT INTERMISSION IS THIS: " +pd)
+        return "at the " + pd + " intermission"
+
+    trem = game["clock"]["timeRemaining"].strip()
     if trem.startswith("0"):
         trem = trem[1:]
-    pd = game["linescore"]["currentPeriodOrdinal"].strip()
+    pd = toOrdinal(game["period"])
+    
     if trem == '20:00':
         return "start of the " + pd
     elif trem == 'END':
-        
         if pd == "3rd":
             return "at the end of regulation"
-        elif game["linescore"]["intermissionInfo"]["inIntermission"]:
-            if pd in ("1st","2nd"):
-                return "at the " + pd + " intermission"
-            else:
-                print("intermission but it's overtime/so, LOOK AT THIS")
-                print(json.dumps(game,sort_keys=True, indent=4, separators=(',', ': ')))
-                return "at the " + pd + " intermission"
         else:
             if pd == "OT":
                 # you might catch a situation where the game's over, but they don't know it yet
@@ -254,7 +258,9 @@ def game_time_set(game):
             else:
                 return "end of the " + pd
     else:
-        if pd != "OT":
+        if pd == "4th":
+            pd = "OT"
+        elif pd != "OT":
             pd = "the " + pd
         return trem + " to go in " + pd
 
@@ -262,16 +268,13 @@ def final_qualifier(game):
     """return 'in overtime' or 'in a shootout' if appropriate for the 
     final score. Assume the game went there."""
     
-    if game["gameState"]:
-        # TODO TODO TODO TODO TODO THIS IS JUST TO GET US OUT OF HERE
-        return ""
-    elif game["linescore"]["currentPeriodOrdinal"] == "OT":
+    if game["gameOutcome"]["lastPeriodType"] == "OT":
         return " in overtime"
-    elif game["linescore"]["currentPeriodOrdinal"] == "SO":
+    elif game["gameOutcome"]["lastPeriodType"] == "SO":
         return " in a shootout"
-    elif game["linescore"]["currentPeriod"] > 3:
-        print("this is weird: period is " + game["linescore"]["currentPeriodOrdinal"])
-        return " in " + game["linescore"]["currentPeriodOrdinal"]
+    elif game["periodDescriptor"]["number"] > 3:
+        print("this is weird: period is " + game["periodDescriptor"]["number"] + ", lastPeriodType is " + game["gameOutcome"]["lastPeriodType"])
+        return " in " + game["gameOutcome"]["lastPeriodType"]
     else:
         return ""
 
@@ -292,8 +295,11 @@ def phrase_game(game):
         loc = game_loc(game)
         ret = teamDisplayName(game["awayTeam"])
         homeTeam = teamDisplayName(game["homeTeam"])
-        ret += " visit " if (ret in NHL_TEAMNAME_AS_PLACENAME) else " visits "
-        ret += " the " if homeTeam in NHL_TEAMNAME_AS_PLACENAME else "" 
+        if (ret in NHL_TEAMNAME_AS_PLACENAME or ("placeName" not in game["awayTeam"])):
+            ret = "the " + ret + " visit "
+        else:
+            ret += " visits "
+        ret += "the " if (homeTeam in NHL_TEAMNAME_AS_PLACENAME or ("placeName" not in game["homeTeam"])) else "" 
         ret += homeTeam
         if game["neutralSite"]:    # unusual venue
             ret = (ret.replace(" play"," visit") + game_loc(game))
@@ -309,7 +315,7 @@ def phrase_game(game):
             ret += ", scheduled for " + str(lse) + ", is delayed (or the league web site has no data)."
         return ret
         
-    elif status in ("LIVE"):    # in progress, ??in progress - critical TODO TODO TODO TODO TODO
+    elif status in ("LIVE","CRIT"):    # in progress, critical
         base = game_loc(game) + ", " + scoreline(game)
         timeset = game_time_set(game)
         if not timeset.startswith("at "):
@@ -334,7 +340,7 @@ def phrase_game(game):
         return ret
         
     else:
-        return "HELP, I don't understand gamestatus " + str(status) + " yet for " + game["awayTeam"]["placeName"]["default"] + " at " + game["homeTeam"]["placeName"]["default"]
+        return "HELP, I don't understand gamestatus " + str(status) + " yet for " + str(game)
     
         
 def get(team,fluidVerbose=False,rewind=False,ffwd=False):
