@@ -302,7 +302,7 @@ def phrase_game(game):
         ret += "the " if (homeTeam in NHL_TEAMNAME_AS_PLACENAME or ("placeName" not in game["homeTeam"])) else "" 
         ret += homeTeam
         if game["neutralSite"]:    # unusual venue
-            ret = (ret.replace(" play"," visit") + game_loc(game))
+            ret = (ret.replace(" play"," visit") + " " + game_loc(game))
 
         try:
             gametime = local_game_time(game)
