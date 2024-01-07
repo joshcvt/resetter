@@ -10,7 +10,7 @@ from string import capwords
 
 intRolloverUtcTime = 1000
 
-preferredTZ = ({"offset":-5,"tz":"EST"},{"offset":-4,"tz":"EDT"})
+TZ_USE_EASTERN = True
 
 #SCOREBOARD_URL_JSON = "https://statsapi.web.nhl.com/api/v1/schedule?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&expand=schedule.teams,schedule.linescore,schedule.broadcasts.all,schedule.ticket,schedule.game.content.media.epg,schedule.radioBroadcasts,schedule.decisions,schedule.scoringplays,schedule.game.content.highlights.scoreboard,team.leaders,schedule.game.seriesSummary,seriesSummary.series&leaderCategories=points,goals,assists&leaderGameTypes=R&site=en_nhl&teamId=&gameType=&timecode="
 SCOREBOARD_URL_JSON = "https://api-web.nhle.com/v1/schedule/YYYY-MM-DD"
@@ -79,14 +79,6 @@ def debug(text):
     if DEBUG_LEVEL == "DEBUG":
         print(text)
     return
-
-def todayIsDst(sb):
-    try:
-        return (sb['gameWeek'][0]['games'][0]['easternUTCOffset'] == "-04:00")
-    except:
-        raise TzFailedUseLocalException
-    
-    return False
 
 def buildVarsToCode():
     vtoc = {}
@@ -199,20 +191,18 @@ def local_game_time(game):
             
     gameutc = datetime.strptime(game['startTimeUTC'],'%Y-%m-%dT%H:%M:%SZ')
     startdelay = datetime.utcnow() - gameutc
-    if (__MOD["dst"] == "local"):
-        # tz is name, offset is hrs off
-        homezoneName = game["venueTimezone"]
-        homezoneOffset = game["venueUTCOffset"].split(':')[0]
+
+    if TZ_USE_EASTERN:
+        homezoneOffset = game["easternUTCOffset"].split(':')[0]
+        homezoneName = "Eastern"
     else:
-        if __MOD["dst"]:
-            idx = 1
-        else:
-            idx = 0
-        homezoneOffset = preferredTZ[idx]["offset"]
-        homezoneName = preferredTZ["name"]
+        # tz is name, offset is hrs off
+        homezoneOffset = game["venueUTCOffset"].split(':')[0]
+        homezoneName = game["venueTimezone"]
+        if homezoneName.startswith("US/"):
+            homezoneName = homezoneName.replace("US/","")
+        # TODO they use many janky Zoneinfo names that you'd want to have a conversion map for in production
     
-    if homezoneName.startswith("US/"):
-        homezoneName = homezoneName.replace("US/","")
     homezoneOffset = int(homezoneOffset)
     gamelocal = gameutc + timedelta(hours=(homezoneOffset))
     printtime = gamelocal.strftime("%I:%M %p") + " " + homezoneName 
@@ -359,12 +349,6 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
         raise NoTeamException
     
     sb = get_scoreboard(fluidVerbose=fluidVerbose,rewind=rewind,ffwd=ffwd)
-    # what we should have now is the ["games"] list. which is fine raw if it's "scoreboard" but needs processing if 
-    #print json.dumps(sb, sort_keys=True, indent=4, separators=(',', ': '))
-    try:
-        __MOD["dst"] = todayIsDst(sb)
-    except TzFailedUseLocalException:
-        __MOD["dst"] = "local"
     
     ret = ""
     
