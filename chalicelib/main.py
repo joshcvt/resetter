@@ -12,9 +12,10 @@ def get_team(team,debug=False,inOverride=False):
 	hold = None
 	retList = None
 	opts = []
-		
-	fns = {"mlb":get_mlb,"football":get_ncaaf,"nhl":get_nhl}
 	
+	fns = {"mlb":get_mlb,"football":get_ncaaf,"nhl":get_nhl}
+	fns_key_order = ["mlb","nhl","football"]
+
 	# first, try if the sport's defined.
 	try:
 		(team,sport) = sport_strip(team)
@@ -39,7 +40,7 @@ def get_team(team,debug=False,inOverride=False):
 	# if it isn't:
 	except NoSportException:
 		
-		for k in fns:
+		for k in fns_key_order:
 			if debug:
 				print("calling " + k, end=' ')
 			
@@ -102,12 +103,11 @@ def sport_strip(team):
 	"""If sport is specified either first or last, return team plus it as a tuple. If not, throw Exception."""
 	line = team.strip().lower()
 	
-	#if line.endswith("football"):
-	#	return (team[:-8].strip(),"football")
-	#elif line.startswith("football "):
-	#	return (team[9:].strip(),"football")
-	#elif line.endswith("hockey"):
-	if line.endswith("hockey"):
+	if line.endswith("football"):
+		return (team[:-8].strip(),"football")
+	elif line.startswith("football "):
+		return (team[9:].strip(),"football")
+	elif line.endswith("hockey"):
 		return (team[:-6].strip(),"nhl")
 	elif line.startswith("hockey "):
 		return (team[7:].strip(),"nhl")
