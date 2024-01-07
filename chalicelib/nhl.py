@@ -41,7 +41,7 @@ abbrDerefs = {
     'BOS':["bruins","b's","bs","boston"],
     'DET':["red wings","wings","det","detroit"],
 
-    'CAR':["hurricanes","carolina","canes","car","jerks","whale","whalers","hartford","brass bonanza"],
+    'CAR':["hurricanes","carolina","canes","car","jerks","whale","whalers","hartford","brass bonanza","carolina hurricanes"],
     'WSH':["capitals","caps","was","washington","dc"],
     'NYR':["rangers","nyr","blueshirts"],
     'NYI':["islanders","isles","nyi","brooklyn"],

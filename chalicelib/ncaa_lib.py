@@ -70,7 +70,7 @@ ncaaNickDict = {'rebels': ['Ole Miss','UNLV'], "runnin' rebels":"unlv","ole miss
 	'bulldogs': ['Mississippi State','Georgia'], 'mississippi state':'mississippi st.', 'clanga':'mississippi st.','dawgs':'georgia', 
 	'wolfpack': 'nc state', 'north carolina state': 'nc state', 'n.c. state': 'nc state', 
 	'mountaineers': 'west virginia', 'eers': 'west virginia', 'wvu': 'west virginia',
-	'hurricanes': 'miami (fla.)', 'canes': 'miami (fla.)',
+	'hurricanes': 'miami (fla.)', 'canes': 'miami (fla.)', 'miami hurricanes': 'miami (fla.)', 'miami': 'miami (fla.)',
 	'trojans': 'usc', 
 	'bearcats': 'cincinnati', 
 	'utes': 'utah', 
