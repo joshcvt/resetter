@@ -22,6 +22,8 @@ def get_team(team,debug=False,inOverride=False):
 		if debug:
 			print("got " + team + ", " + sport)
 		if sport in fns:
+			if (not team or len(team.strip()) == 0):
+				team = "scoreboard"
 			try:
 				if inOverride:
 					rv = fns[sport](team,inOverride=inOverride)
