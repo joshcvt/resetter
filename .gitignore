@@ -4,10 +4,12 @@
 *.pyc
 
 .chalice/*.json
-!.chalice/config.json
+!.chalice/sample*.json
 
 samples/
 
 .vscode/
 .venv/
 
+.terraform
+terraform.tfstate

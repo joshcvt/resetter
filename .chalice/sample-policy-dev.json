@@ -1,0 +1,24 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        "Resource": "arn:aws:logs:*:*:*"
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+            "ssm:GetParameter",
+            "ssm:GetParameters"
+        ],
+        "Resource": [
+            "arn:aws:ssm:us-east-1:123456789012:parameter/resetter/slack_web_hook_url"
+        ]
+    }
+    ]
+  }
