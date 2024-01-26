@@ -193,7 +193,7 @@ def status(game):
 	return sentenceCap(status)
 
 
-def get(team,forceReload=False,debug=False,file=None):
+def get(team,forceReload=False,debug=False,file=None,ffwd=None):
 	
 	global __MOD
 

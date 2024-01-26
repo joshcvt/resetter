@@ -1,11 +1,23 @@
 #!/usr/bin/env python
 
+import json
 from string import capwords
+import traceback
+
+#import urllib3
+import urllib
 
 from .mlbstatsapi import launch as get_mlb
 from .ncaaf_espn import get as get_ncaaf
 from .nhl import get as get_nhl
 from .reset_lib import joinOr, NoGameException, NoTeamException, DabException
+
+global slackUrl 
+slackUrl = None
+
+
+class NoSportException(Exception):
+	pass
 
 def get_team(team,debug=False,inOverride=False):
 
@@ -18,7 +30,10 @@ def get_team(team,debug=False,inOverride=False):
 
 	# first, try if the sport's defined.
 	try:
-		(team,sport) = sport_strip(team)
+		linedict = sport_strip(team)
+		team = linedict["team"]
+		sport = linedict["sport"]
+		ffwd = True if "ffwd" in linedict else False
 		if debug:
 			print("got " + team + ", " + sport)
 		if sport in fns:
@@ -26,9 +41,9 @@ def get_team(team,debug=False,inOverride=False):
 				team = "scoreboard"
 			try:
 				if inOverride:
-					rv = fns[sport](team,inOverride=inOverride)
+					rv = fns[sport](team,inOverride=inOverride,ffwd=ffwd)
 				else:
-					rv = fns[sport](team)
+					rv = fns[sport](team,ffwd=ffwd)
 				if rv:
 					return rtext(rv)
 			#except NoGameException as e:
@@ -104,31 +119,74 @@ def rtext(retList):
 def sport_strip(team):
 	"""If sport is specified either first or last, return team plus it as a tuple. If not, throw Exception."""
 	line = team.strip().lower()
+	splits = team.split()
+	rv = {"team":""} # default in case it's a bare league scoreboard call.
+
+	sports = ("football","nhl","mlb")
 	
-	if line.endswith("football"):
-		return (team[:-8].strip(),"football")
-	elif line.startswith("football "):
-		return (team[9:].strip(),"football")
-	elif line.endswith("hockey"):
-		return (team[:-6].strip(),"nhl")
-	elif line.startswith("hockey "):
-		return (team[7:].strip(),"nhl")
-	elif line.endswith("nhl"):
-		print("did dis")
-		return (team[:-3].strip(), "nhl")
-	elif line.startswith("nhl "):
-		return (team[4:].strip(), "nhl")
-	elif line.endswith("mlb"):
-		return (team[:-3].strip(), "mlb")
-	elif line.startswith("mlb "):
-		return (team[4:].strip(), "mlb")
-	elif line.endswith("baseball"):
-		return (team[:-8].strip(), "mlb")
-	elif line.startswith("baseball "):
-		return (team[9:].strip(),"mlb")
+	if splits[-1] == "tomorrow":
+		rv["ffwd"] = True
+		splits = splits[:-1]
 	
-	raise NoSportException()
+	if splits[0] in sports:
+		rv["sport"] = splits[0]
+		if len(splits) > 1:
+			rv["team"] = splits[1]
+		return rv
+	elif len(splits) > 1 and splits[1] in sports:
+		rv["team"] = splits[0]
+		rv["sport"] = splits[1]
+		return rv
+	else:
+		raise NoSportException()
+	
+
+def getSlackUrl():
+	from boto3 import client
+	global slackUrl
+
+	if not slackUrl:
+		try:
+			slackUrl = client('ssm').get_parameter(Name='/resetter/slack_web_hook_url',WithDecryption=True)['Parameter']['Value']
+			
+		except Exception as e:
+			print("SSM fetch failed: " + str(e))
+	else:
+		print("lambda was warm, using cached slackUrl")
+	return True
 
 
-class NoSportException(Exception):
-	pass
+def postSlack(whichContent="nhl",channel="backtalk",banner=""):
+	
+	# for the moment let's just assume it's the NHL scoreboard
+	
+	try:
+		rtext = get_team(whichContent)
+		if len(banner) > 0:
+			rtext = "*" + banner +"*\n" + rtext
+		payloadDict = {"text":rtext}
+		_sendSlack(payloadDict,channel)
+	except Exception as e:
+		print("postSlack failed on:\n" + str(e))
+
+
+
+def _sendSlack(payloadDict,channel=None):
+	#verbatim from natinal_bot
+
+	global slackUrl
+	if not getSlackUrl():
+		print("getSlackUrl failed to populate")
+		return
+	
+	try:
+		if channel != None and channel != "":
+			payloadDict["channel"] = channel
+
+		data = urllib.parse.urlencode({"payload": json.dumps(payloadDict)}).encode('utf-8')
+		req = urllib.request.Request(slackUrl, data=data)
+		response = urllib.request.urlopen(req)
+		print(str(response.read()))
+	except Exception as e:
+		print("Couldn't post for some reason:\n" + str(e))
+		return
