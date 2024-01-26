@@ -2,7 +2,7 @@
 
 from chalicelib.main import get_team
 
-teams = ["nhl toronto", "mlb toronto", "football miami", "nhl", "nhl scoreboard", "Toronto","Washington","canes","NY","NYR","NYY","LA","Miami","garbage","my aneurysm"]
+teams = ["nhl toronto", "mlb toronto", "mlb", "football miami", "nhl", "nhl scoreboard", "nhl tomorrow", "Toronto","Washington","canes","NY","NYR","NYY","LA","Miami","garbage","my aneurysm"]
 
 print("\n\n")
 for t in teams:
