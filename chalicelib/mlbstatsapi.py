@@ -260,7 +260,7 @@ def getProbables(g,tvTeam=None,preferredTZ="America/New_York",verbose=True):
 	return runningStr
 
 
-def launch(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False):
+def launch(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False,date=None):
 
 	#logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',filename=logFN, level=logLevel)
 	
@@ -268,7 +268,8 @@ def launch(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False):
 	filterMode = FILTER_STANDARD
 	if "tv" == inOverride:
 		filterMode = FILTER_OVERRIDETV
-	
+	if date:
+		print("I can't do anything with a date param yet: ")
 	# for testing
 	if rewind:
 		# force yesterday's games by making the rollover absurd.
