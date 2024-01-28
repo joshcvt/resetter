@@ -3,6 +3,7 @@
 import json
 from string import capwords
 import traceback
+from datetime import date
 
 #import urllib3
 import urllib
@@ -34,6 +35,9 @@ def get_team(team,debug=False,inOverride=False):
 		team = linedict["team"]
 		sport = linedict["sport"]
 		ffwd = True if "ffwd" in linedict else False
+		date = linedict["date"] if "date" in linedict else False
+		if ffwd and date:
+			return rtext("I'm sorry, I can't accept both ffwd and a specified date.")
 		if debug:
 			print("got " + team + ", " + sport)
 		if sport in fns:
@@ -41,9 +45,9 @@ def get_team(team,debug=False,inOverride=False):
 				team = "scoreboard"
 			try:
 				if inOverride:
-					rv = fns[sport](team,inOverride=inOverride,ffwd=ffwd)
+					rv = fns[sport](team,inOverride=inOverride,ffwd=ffwd,date=date)
 				else:
-					rv = fns[sport](team,ffwd=ffwd)
+					rv = fns[sport](team,ffwd=ffwd,date=date)
 				if rv:
 					return rtext(rv)
 			#except NoGameException as e:
@@ -127,6 +131,11 @@ def sport_strip(team):
 	if splits[-1] == "tomorrow":
 		rv["ffwd"] = True
 		splits = splits[:-1]
+	dateRes = dateParse(splits[-1])
+	if dateRes:
+		rv["date"] = dateRes
+		splits = splits[:-1]
+		print("hey, I got a date " + str(dateRes))
 	
 	if splits[0] in sports:
 		rv["sport"] = splits[0]
@@ -139,7 +148,36 @@ def sport_strip(team):
 		return rv
 	else:
 		raise NoSportException()
+
+
+def dateParse(instr):
+	# if this is a date, send it back as a Date. If anything breaks, return False
+	# supported formats: YYYY-MM-dd, MM-dd-YYYY, MM-dd, MM/dd/YYYY, MM/dd
 	
+	try:
+		dashed = instr.split("-")
+		slashed = instr.split("/")
+		splits = dashed if len(dashed) > len(slashed) else slashed
+		#print("dateparse splits: " + str(splits))
+		if len(splits) <= 1:
+			return False
+		for idx, s in enumerate(splits):
+			splits[idx] = int(s)
+
+		if len(splits) == 3:
+			# is year first or last?
+			if splits[0] > 1000:
+				return date(splits[0],splits[1],splits[2])
+			else:
+				return date(splits[2],splits[0],splits[1])
+		elif len(splits) == 2:
+			today = date.today()
+			return date(today.year,splits[0],splits[1])
+	except Exception as e:
+		#print("hey, dateparse blew up: " + str(e))
+		return False
+
+	return False
 
 def getSlackUrl():
 	from boto3 import client

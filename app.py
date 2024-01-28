@@ -5,14 +5,24 @@ from chalice import Chalice, Cron
 from chalicelib.main import get_team
 from chalicelib.main import postSlack
 
+from datetime import date, timedelta
+
+# what if we just hit /reset?
 DEFAULT_PARAM = "WSH"
+
 SCHEDULED_POST_CHANNEL = "general"
+# the reason to do this with explicit dates is that it gets you around when the league rolls over what it thinks "today" is.
+# note this trusts UTC date to be the same as you think the date is when you call it. to fix that you need this module to be
+# timezone aware. That's... a future issue.
+TODAY = date.today()
+YESTERDAY = TODAY - timedelta(days=1)
 SCHEDULED_POSTS = [
-	{"request":"nhl","banner":"Last night's scores:"},
-	{"request":"nhl tomorrow","banner":"Tonight's games"}
+	{"request":"nhl "+ YESTERDAY.isoformat(),"banner":"Last night's scores: "},
+	{"request":"nhl "+ TODAY.isoformat(),"banner":"Tonight's games: "}
 ]
 # note: to disable this you must also comment out the @app.schedule line below
-SCHEDULED_POST_SCHEDULE = Cron(0, 13, "*", "*", "?", "*")
+SCHEDULED_POST_SCHEDULE = Cron(0, "13", "*", "*", "?", "*")
+
 
 app = Chalice(app_name='resetter')
 
