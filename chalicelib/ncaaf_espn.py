@@ -193,11 +193,14 @@ def status(game):
 	return sentenceCap(status)
 
 
-def get(team,forceReload=False,debug=False,file=None,ffwd=None):
+def get(team,forceReload=False,debug=False,file=None,ffwd=None,date=None):
 	
 	global __MOD
 
 	tkey = team.lower().strip()
+	
+	if date:
+		print("I can't do anything with a date param yet: ")
 	
 	if debug:
 		print("tkey: " + tkey + ", ", end="")

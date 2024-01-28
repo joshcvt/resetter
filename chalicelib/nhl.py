@@ -96,7 +96,7 @@ def buildVarsToCode():
     #print(vtoc)
     return vtoc
 
-def get_scoreboard(file=None,fluidVerbose=False,rewind=False,ffwd=False):
+def get_scoreboard(file=None,fluidVerbose=False,rewind=False,ffwd=False,date=None):
     """Get scoreboard from site, or from file if specified for testing."""
 
     global __MOD
@@ -106,27 +106,33 @@ def get_scoreboard(file=None,fluidVerbose=False,rewind=False,ffwd=False):
         fh = open(file)
         sb = json.loads(fh.read())
         __MOD["date"] = sb['gameWeek'][0]['date']
+    
     else:
-        localRollover = intRolloverUtcTime
+        if date:
+            todayScoreboardUrl = SCOREBOARD_URL_JSON.replace("YYYY-MM-DD",date.strftime("%Y-%m-%d"))
+        else:
+            localRollover = intRolloverUtcTime
 
-        if not (rewind or ffwd):
-            todayScoreboardUrl = SCORENOW_URL_JSON
-        else:    
-            if rewind:
-                # force yesterday's games by making the rollover absurd.
-                localRollover += 2400
-            if ffwd:
-                localRollover -= 2400
+            if not (rewind or ffwd):
+                todayScoreboardUrl = SCORENOW_URL_JSON
+            else:    
+                if rewind:
+                    # force yesterday's games by making the rollover absurd.
+                    localRollover += 2400
+                if ffwd:
+                    localRollover -= 2400
+            
+                todayDT = datetime.utcnow() - timedelta(minutes=((localRollover/100)*60+(localRollover%100)))
+                __MOD["date"] = todayDT.strftime("%Y-%m-%d")
+                todayScoreboardUrl = SCOREBOARD_URL_JSON.replace("YYYY-MM-DD",__MOD["date"])
         
-            todayDT = datetime.utcnow() - timedelta(minutes=((localRollover/100)*60+(localRollover%100)))
-            __MOD["date"] = todayDT.strftime("%Y-%m-%d")
-            todayScoreboardUrl = SCOREBOARD_URL_JSON.replace("YYYY-MM-DD",__MOD["date"])
-
+        #now we have a todayScoreboardUrl, one way or another
         req = Request(todayScoreboardUrl)
         req.add_header('User-agent', 'Mozilla/5.0')
         raw = json.loads(urlopen(req).read())
     
-    if (rewind or ffwd):
+    if (rewind or ffwd or date):
+        # we used the scoreboard rather than scorenow
         return raw["gameWeek"][0]["games"]
     else:
         return raw["games"]
@@ -218,8 +224,17 @@ def local_game_time(game):
     
 
 def game_time_set(game):
-    # assumption: we're only getting a LIVE game here from the SCORENOW endpoint.
 
+    if "clock" not in game:
+        # we got a live game from the scoreboard endpoint that only has a period descriptor. 
+        # This will only happen if you explicitly call with a date during live games.
+        # this is unexpected so we're going to play it cheap
+        if game["periodDescriptor"]["number"] == 4:
+            return "in OT"
+        else:
+            return "in the " + toOrdinal(game["periodDescriptor"]["number"]) + " period"
+
+    # assumption good from here: we're only getting a LIVE game here from the SCORENOW endpoint.
     if game["clock"]["inIntermission"]:
         pd = toOrdinal(game["period"])
         if pd in ("3rd","4th"):
@@ -333,7 +348,7 @@ def phrase_game(game):
         return "HELP, I don't understand gamestatus " + str(status) + " yet for " + str(game)
     
         
-def get(team,fluidVerbose=False,rewind=False,ffwd=False):
+def get(team,fluidVerbose=False,rewind=False,ffwd=False,date=None):
 
     global __MOD
     
@@ -348,7 +363,7 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False):
     if not ((tkey == "scoreboard") or (tkey in vtoc)):
         raise NoTeamException
     
-    sb = get_scoreboard(fluidVerbose=fluidVerbose,rewind=rewind,ffwd=ffwd)
+    sb = get_scoreboard(fluidVerbose=fluidVerbose,rewind=rewind,ffwd=ffwd,date=date)
     
     ret = ""
     
