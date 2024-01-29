@@ -14,7 +14,7 @@ for t in teams:
 		print(e.__class__.__name__, str(e))
 	print("")
 
-print("Does date parse work? calling NHL 2024-1-22, NHL 1/27")
+print("Does date parse work? calling NHL 2024-1-22, MLB 6/27")
 print(get_team("nhl 2024-1-22"))
-print(get_team("nhl 1/27"))
+print(get_team("MLB 6/27"))
 print("Done!")

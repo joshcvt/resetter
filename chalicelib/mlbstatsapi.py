@@ -228,6 +228,8 @@ def getWLERA(pitcher):
 
 def getTVNets(g,ah=None,suppressIntl=True):
 	ret = []
+	if not ("broadcasts" in g):
+		return None
 	for bc in g["broadcasts"]:
 		if bc["type"] == "TV":
 			if (("isNational" in list(bc.keys())) or (ah and bc["homeAway"] == ah)):
@@ -255,7 +257,8 @@ def getProbables(g,tvTeam=None,preferredTZ="America/New_York",verbose=True):
 		# we used to suppress playoff display here. I don't think we need to anymore.
 		#homeAbbr if we ever want that: = g["teams"]["home"]["team"]["abbreviation"]
 		homeaway = "away" if tvTeam == g["teams"]["away"]["team"]["abbreviation"] else "home"
-		runningStr += " TV: " + getTVNets(g,homeaway) + "."
+		tvNets = getTVNets(g,homeaway)
+		runningStr += (' TV: ' + tvNets + '. ') if (tvNets != None and tvNets != "") else ""
 	
 	return runningStr
 
@@ -268,8 +271,8 @@ def launch(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False,date=
 	filterMode = FILTER_STANDARD
 	if "tv" == inOverride:
 		filterMode = FILTER_OVERRIDETV
-	if date:
-		print("I can't do anything with a date param yet: ")
+	if date and (rewind or ffwd):
+		raise NoGameException("mlbstatsapi.launch can either take a literal date or rewind/ffwd, but not both. Returning no games.")
 	# for testing
 	if rewind:
 		# force yesterday's games by making the rollover absurd.
@@ -288,7 +291,10 @@ def launch(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False,date=
 	elif team not in vtoc:
 		raise NoTeamException
 	
-	todayDT = datetime.now() - timedelta(minutes=((localRollover/100)*60+(localRollover%100)))
+	if date:
+		todayDT = datetime(date.year,date.month,date.day,0,0,0)
+	else:
+		todayDT = datetime.now() - timedelta(minutes=((localRollover/100)*60+(localRollover%100)))
 	
 	sapiScoreboard = loadSAPIScoreboard(statsApiScheduleUrl,todayDT)
 	
@@ -311,7 +317,12 @@ def launch(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False,date=
 	
 	rv = []
 	for gn in gns:
-		resetVal = getReset(gn,vtoc[team],fluidVerbose, filterMode)
+		try:
+			resetVal = getReset(gn,vtoc[team],fluidVerbose, filterMode)
+		except Exception as resetExcept:
+			print("This all blew up as " + str(resetExcept) + "\n" + str(gn))
+			resetVal = None
+		
 		rv.append(resetVal) if resetVal else None
 		#print "rv is " + str(rv)
 	
