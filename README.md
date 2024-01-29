@@ -11,7 +11,8 @@ To use this:
 * clone this repo
 * create a venv or your other favorite Python working environment for Python >= 3.11
 * `pip install -f requirements.txt` (which will install the Chalice CLI)
-* if you want to set up scheduled posts, establish a [Slack webhook](https://api.slack.com/messaging/webhooks), get the POST URL from that, and run the Terraform in `terraform/slackkey` to store the webhook in Parameter Store
+* if you want to set up scheduled posts, establish a [Slack webhook](https://api.slack.com/messaging/webhooks), get the POST URL from that, and run the Terraform in `terraform/slackkey` to store the webhook in Parameter Store. Take the output ARN of the parameter, copy `.chalice/sample-policy-dev.json` to `.chalice/policy-dev.json` and update the parameter ARN there.
+* if you don't want to set up scheduled posts, you don't need a custom IAM policy. copy `.chalice/sample-config-no-custom-policy.json` to `.chalice/config.json`.
 * Customize the `DEFAULT_PARAM` in `app.py` unless you're Washington Nationals fans like the people in the Slack where this was originally deployed
 * Still in `app.py`, check out the `SCHEDULED_POST*` lines, including a cron schedule in UTC. Adjust them as you desire or empty them out. *If you do not want scheduled posts, you will need to comment out the `@app.schedule` decorator on the `scoreboardPoster` function.* Not being able to directly parameterize this is a Chalice limitation.
 * `chalice deploy` and note the given API Gateway URL.  Then set up a Slash Command custom integration for your Slack team, paste in the API Gateway URL that Chalice gave you, set it as a GET request, and configure everything else at your leisure.
