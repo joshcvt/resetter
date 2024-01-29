@@ -21,4 +21,4 @@ Testing is league-by-league from your development environment against live data,
 
 ----
 
-<a name="footnote1" href="#ref1"><sup>1</sup></a> The developer of this application claims no rights to or control over the league/association data sources it targets or the data contained within. Users of this application are themselves solely responsible for assuring that their use of this application, the sources and the data contained within complies with any and all terms and conditions set by the owners of the data sources.
+<a name="footnote1" href="#ref1">1.</a> The developer of this application claims no rights to or control over the league/association data sources it targets or the data contained within. Users of this application are themselves solely responsible for assuring that their use of this application, the sources and the data contained within complies with any and all terms and conditions set by the owners of the data sources.
