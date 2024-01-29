@@ -55,7 +55,8 @@ def get_team(team,debug=False,inOverride=False):
 			#except NoTeamException as e:
 			#	hold = "No team " + tm + " found."
 			except Exception as e:
-				print("got exception: " + e.__class__.__name__ + " " + str(e))
+				if debug:
+					print("debug: got exception getting sport fn: " + e.__class__.__name__ + " " + str(e))
 				hold = e
 	
 	# if it isn't:
@@ -89,8 +90,8 @@ def get_team(team,debug=False,inOverride=False):
 		retList = "Did you mean " + joinOr(opts) + "?"
 	elif hold and isinstance(hold,NoGameException):
 		
-		if team in ('scoreboard','schedule'):
-			retList = str(e)
+		if team in ('scoreboard','schedule',''):
+			retList = str(hold)
 		else:
 			if team.upper() != team:	# don't override if it's something like NYY
 				team = capwords(team)
@@ -123,11 +124,10 @@ def rtext(retList):
 def sport_strip(team):
 	"""If sport is specified either first or last, return team plus it as a tuple. If not, throw Exception."""
 	line = team.strip().lower()
-	splits = team.split()
+	splits = line.split()
 	rv = {"team":""} # default in case it's a bare league scoreboard call.
 
 	sports = ("football","nhl","mlb")
-	
 	if splits[-1] == "tomorrow":
 		rv["ffwd"] = True
 		splits = splits[:-1]
