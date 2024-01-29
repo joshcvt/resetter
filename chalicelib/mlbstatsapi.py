@@ -229,7 +229,7 @@ def getWLERA(pitcher):
 def getTVNets(g,ah=None,suppressIntl=True):
 	ret = []
 	if not ("broadcasts" in g):
-		return "N/A"
+		return None
 	for bc in g["broadcasts"]:
 		if bc["type"] == "TV":
 			if (("isNational" in list(bc.keys())) or (ah and bc["homeAway"] == ah)):
@@ -257,7 +257,8 @@ def getProbables(g,tvTeam=None,preferredTZ="America/New_York",verbose=True):
 		# we used to suppress playoff display here. I don't think we need to anymore.
 		#homeAbbr if we ever want that: = g["teams"]["home"]["team"]["abbreviation"]
 		homeaway = "away" if tvTeam == g["teams"]["away"]["team"]["abbreviation"] else "home"
-		runningStr += " TV: " + getTVNets(g,homeaway) + "."
+		tvNets = getTVNets(g,homeaway)
+		runningStr += (' TV: ' + tvNets + '. ') if (tvNets != None and tvNets != "") else ""
 	
 	return runningStr
 

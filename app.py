@@ -17,8 +17,10 @@ SCHEDULED_POST_CHANNEL = "general"
 TODAY = date.today()
 YESTERDAY = TODAY - timedelta(days=1)
 SCHEDULED_POSTS = [
-	{"request":"nhl "+ YESTERDAY.isoformat(),"banner":"Last night's scores: "},
-	{"request":"nhl "+ TODAY.isoformat(),"banner":"Tonight's games: "}
+	{"request":"nhl "+ YESTERDAY.isoformat(),"banner":"Last night's NHL scores: "},
+	{"request":"nhl "+ TODAY.isoformat(),"banner":"Tonight's NHL games: "},
+	{"request":"mlb "+ YESTERDAY.isoformat(),"banner":"Last night's MLB scores: "},
+	{"request":"mlb "+ TODAY.isoformat(),"banner":"Tonight's MLB games: "}
 ]
 # note: to disable this you must also comment out the @app.schedule line below
 SCHEDULED_POST_SCHEDULE = Cron(0, "13", "*", "*", "?", "*")

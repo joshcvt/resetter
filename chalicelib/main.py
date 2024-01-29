@@ -200,6 +200,8 @@ def postSlack(whichContent="nhl",channel="backtalk",banner=""):
 	
 	try:
 		rtext = get_team(whichContent)
+		if "no games" in rtext.lower():
+			return	# skip slack if there's no games
 		if len(banner) > 0:
 			rtext = "*" + banner +"*\n" + rtext
 		payloadDict = {"text":rtext}
