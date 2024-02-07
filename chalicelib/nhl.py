@@ -28,6 +28,14 @@ dabBacks = {
     "ny":["Rangers","Islanders"]
 }
 
+TEAM_ID_TO_OUTPUT = {11: 'Thrashers', 34: 'Whalers', 31: 'North Stars', 32: 'Nordiques', 33: 'Jets (1979)', 35: 'Rockies', 36: 'Senators (1917)', 37: 'Tigers', 
+                     38: 'Pirates', 39: 'Quakers', 40: 'Cougars', 41: 'Wanderers', 42: 'Bulldogs', 43: 'Maroons', 44: 'Americans', 45: 'Eagles', 46: 'Seals', 
+                     47: 'Flames', 48: 'Scouts', 49: 'Barons', 50: 'Falcons', 51: 'Americans', 1: 'Devils', 56: 'Golden Seals', 57: 'Arenas', 58: 'St. Patricks', 
+                     99: 'NHL', 17: 'Red Wings', 6: 'Bruins', 52: 'Jets', 28: 'Sharks', 5: 'Penguins', 14: 'Lightning', 4: 'Flyers', 10: 'Maple Leafs', 7: 'Sabres', 
+                     12: 'Hurricanes', 53: 'Coyotes', 20: 'Flames', 8: 'Canadiens', 15: 'Capitals', 26: 'Kings', 23: 'Canucks', 21: 'Avalanche', 18: 'Predators', 
+                     24: 'Ducks', 54: 'Golden Knights', 55: 'Kraken', 25: 'Stars', 27: 'Coyotes', 16: 'Blackhawks', 3: 'Rangers', 29: 'Blue Jackets', 13: 'Panthers', 
+                     22: 'Oilers', 30: 'Wild', 19: 'Blues', 9: 'Senators', 2: 'Islanders'}
+
 NHL_TEAMNAME_AS_PLACENAME = ["Rangers","Islanders"]
 
 # scoreboard for the new API only reliably gives you "id","abbrev","placeName"["default"]
@@ -168,7 +176,7 @@ def teamDisplayName(team):
         return team["name"]["default"]
     # else the scoreboard version which has placeName but not name
     #"""we have this because Montreal venue/Montréal teamloc and St. Louis venue/St Louis shortname looks dumb."""
-    overrides = {'Montréal':'Montreal','St Louis':'St. Louis'}
+    overrides = {'Montréal':'Montreal','St Louis':'St. Louis',"Rangers":"NY Rangers","Islanders":"NY Islanders"}
     sname = team["placeName"]["default"]
     if sname in overrides:
         return overrides[sname]
@@ -200,7 +208,11 @@ def local_game_time(game):
 
     if TZ_USE_EASTERN:
         homezoneOffset = game["easternUTCOffset"].split(':')[0]
-        homezoneName = "Eastern"
+        if int(homezoneOffset) == -5:
+            homezoneName = "EST"
+        else:
+            homezoneName = "EDT"
+        #homezoneName = "ET"
     else:
         # tz is name, offset is hrs off
         homezoneOffset = game["venueUTCOffset"].split(':')[0]
@@ -301,9 +313,10 @@ def phrase_game(game):
         ret = teamDisplayName(game["awayTeam"])
         homeTeam = teamDisplayName(game["homeTeam"])
         if (ret in NHL_TEAMNAME_AS_PLACENAME or ("placeName" not in game["awayTeam"])):
-            ret = "the " + ret + " visit "
-        else:
-            ret += " visits "
+            ret = "the " + ret #+ " visit "
+        #else:
+        #    ret += " visits "
+        ret += " at "
         ret += "the " if (homeTeam in NHL_TEAMNAME_AS_PLACENAME or ("placeName" not in game["homeTeam"])) else "" 
         ret += homeTeam
         if game["neutralSite"]:    # unusual venue
@@ -311,7 +324,7 @@ def phrase_game(game):
 
         try:
             gametime = local_game_time(game)
-            ret += " at " + gametime + "."
+            ret += " starts at " + gametime + "."
         except ShortDelayException:
             ret = fix_for_delay(ret)
             ret += " will be underway momentarily."
