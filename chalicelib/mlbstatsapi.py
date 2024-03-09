@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from os import sys
 
 from .nat_lib import *
-from .reset_lib import NoGameException, NoTeamException, DabException
+from .reset_lib import NoGameException, NoTeamException, DabException,RESET_RICH_SLACK,RESET_TEXT
 
 ROLLOVER_LOCALTIME_INT = 1000		# for resetter this is UTC because Lambda runs in UTC
 PLAYOFF_GAME_TYPES = ['F','D','L','W']
@@ -263,7 +263,7 @@ def getProbables(g,tvTeam=None,preferredTZ="America/New_York",verbose=True):
 	return runningStr
 
 
-def launch(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False,date=None):
+def get(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False,date=None,gameFormat=RESET_TEXT):
 
 	#logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',filename=logFN, level=logLevel)
 	
@@ -272,7 +272,7 @@ def launch(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False,date=
 	if "tv" == inOverride:
 		filterMode = FILTER_OVERRIDETV
 	if date and (rewind or ffwd):
-		raise NoGameException("mlbstatsapi.launch can either take a literal date or rewind/ffwd, but not both. Returning no games.")
+		raise NoGameException("mlbstatsapi.get can either take a literal date or rewind/ffwd, but not both. Returning no games.")
 	# for testing
 	if rewind:
 		# force yesterday's games by making the rollover absurd.
