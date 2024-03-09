@@ -202,9 +202,20 @@ def postSlack(whichContent="nhl",channel="backtalk",banner=""):
 		rtext = get_team(whichContent,gameFormat=RESET_RICH_SLACK)
 		if "no games" in rtext.lower():
 			return	# skip slack if there's no games
-		if len(banner) > 0:
+		"""if len(banner) > 0:
 			rtext = "*" + banner +"*\n" + rtext
-		payloadDict = {"text":rtext}
+		payloadDict = {"text":rtext}"""
+		# what we get back is splittable on `\n`
+		lines = rtext.split("\n")
+		payloadDict = {"blocks":[]}
+		if banner:
+			payloadDict["blocks"].append({"type": "header","text": {"type": "plain_text","text": banner}})
+		if lines:
+			fields = []
+			for ln in lines:
+				fields.append({"type": "plain_text","text": ln,"emoji": True})
+			payloadDict["blocks"].append({"type":"section","fields":fields})
+		print("DEBUG: payloadDict:\n" + json.dumps(payloadDict))
 		_sendSlack(payloadDict,channel)
 	except Exception as e:
 		print("postSlack failed on:\n" + str(e))

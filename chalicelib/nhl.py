@@ -5,7 +5,7 @@
 import json, time
 from urllib.request import Request, urlopen
 from datetime import datetime, timedelta
-from .reset_lib import joinOr, sentenceCap, toOrdinal, NoGameException, NoTeamException, DabException
+from .reset_lib import joinOr, sentenceCap, toOrdinal, NoGameException, NoTeamException, DabException, RESET_TEXT, RESET_RICH_SLACK
 from string import capwords
 
 intRolloverUtcTime = 1000
@@ -286,9 +286,9 @@ def final_qualifier(game):
     final score. Assume the game went there."""
     
     if game["gameOutcome"]["lastPeriodType"] == "OT":
-        return " in overtime"
+        return " (OT)"
     elif game["gameOutcome"]["lastPeriodType"] == "SO":
-        return " in a shootout"
+        return " (SO)"
     elif game["periodDescriptor"]["number"] > 3:
         print("this is weird: period is " + game["periodDescriptor"]["number"] + ", lastPeriodType is " + game["gameOutcome"]["lastPeriodType"])
         return " in " + game["gameOutcome"]["lastPeriodType"]
@@ -304,7 +304,7 @@ def fix_for_delay(ret):
     return ret                
     
 
-def phrase_game(game):
+def phrase_game(game,format=RESET_TEXT):
 
     status = game["gameState"]
 
@@ -324,7 +324,10 @@ def phrase_game(game):
 
         try:
             gametime = local_game_time(game)
-            ret += " starts at " + gametime + "."
+            if (format == RESET_RICH_SLACK):
+                ret += " &em; *" + gametime + "*."
+            else:
+                ret += " starts at " + gametime + "."
         except ShortDelayException:
             ret = fix_for_delay(ret)
             ret += " will be underway momentarily."
@@ -361,7 +364,7 @@ def phrase_game(game):
         return "HELP, I don't understand gamestatus " + str(status) + " yet for " + str(game)
     
         
-def get(team,fluidVerbose=False,rewind=False,ffwd=False,date=None):
+def get(team,fluidVerbose=False,rewind=False,ffwd=False,date=None,gameFormat=RESET_TEXT):
 
     global __MOD
     
@@ -395,10 +398,10 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False,date=None):
     elif game.__class__ == list:    # full scoreboard or preseason split-squad
         ret = ""
         for g in game:
-            ret += sentenceCap(phrase_game(g)) + "\n"
+            ret += sentenceCap(phrase_game(g,gameFormat)) + "\n"
         if len(ret) > 0:
             ret = ret[:-1]
     else:
-        ret = sentenceCap(phrase_game(game))
+        ret = sentenceCap(phrase_game(game,gameFormat))
         
     return ret
