@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+RESET_TEXT = "RESET_TEXT"
+RESET_RICH_SLACK = "RESET_RICH_SLACK"
+
 def joinOr(li):
 	if li.__class__ != list:
 		raise Exception
