@@ -2,7 +2,7 @@
 
 from chalicelib.main import postSlack
 
-slacks = ["nhl"]
+slacks = ["nhl 2024-03-21","mlb 2024-03-21"]
 print("")
 for slack in slacks:
 	print("posting Slack %s..." % (slack))

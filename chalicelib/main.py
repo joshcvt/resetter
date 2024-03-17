@@ -8,10 +8,10 @@ from datetime import date
 #import urllib3
 import urllib
 
-from .mlbstatsapi import launch as get_mlb
+from .mlbstatsapi import get as get_mlb
 from .ncaaf_espn import get as get_ncaaf
 from .nhl import get as get_nhl
-from .reset_lib import joinOr, NoGameException, NoTeamException, DabException
+from .reset_lib import joinOr, NoGameException, NoTeamException, DabException, RESET_RICH_SLACK, RESET_TEXT
 
 global slackUrl 
 slackUrl = None
@@ -20,7 +20,7 @@ slackUrl = None
 class NoSportException(Exception):
 	pass
 
-def get_team(team,debug=False,inOverride=False):
+def get_team(team,debug=False,inOverride=False,gameFormat=RESET_TEXT):
 
 	hold = None
 	retList = None
@@ -194,17 +194,29 @@ def getSlackUrl():
 	return True
 
 
-def postSlack(whichContent="nhl",channel="backtalk",banner=""):
-	
-	# for the moment let's just assume it's the NHL scoreboard
+def postSlack(whichContent="nhl",channel="backtalk",banner="",useColumnarPost=False):
 	
 	try:
-		rtext = get_team(whichContent)
+		rtext = get_team(whichContent,gameFormat=RESET_RICH_SLACK)
 		if "no games" in rtext.lower():
 			return	# skip slack if there's no games
-		if len(banner) > 0:
-			rtext = "*" + banner +"*\n" + rtext
-		payloadDict = {"text":rtext}
+		
+		if not useColumnarPost:
+			if len(banner) > 0:
+				rtext = "*" + banner +"*\n" + rtext
+			payloadDict = {"text":rtext}
+		else:
+			# what we get back is splittable on `\n`
+			lines = rtext.split("\n")
+			payloadDict = {"blocks":[]}
+			if banner:
+				payloadDict["blocks"].append({"type": "header","text": {"type": "plain_text","text": banner}})
+			if lines:
+				fields = []
+				for ln in lines:
+					fields.append({"type": "plain_text","text": ln,"emoji": True})
+				payloadDict["blocks"].append({"type":"section","fields":fields})
+		print("DEBUG: payloadDict:\n" + json.dumps(payloadDict))
 		_sendSlack(payloadDict,channel)
 	except Exception as e:
 		print("postSlack failed on:\n" + str(e))

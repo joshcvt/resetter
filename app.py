@@ -23,7 +23,7 @@ SCHEDULED_POSTS = [
 	{"request":"mlb "+ TODAY.isoformat(),"banner":"Tonight's MLB games: "}
 ]
 # note: to disable this you must also comment out the @app.schedule line below
-SCHEDULED_POST_SCHEDULE = Cron(0, "13", "*", "*", "?", "*")
+SCHEDULED_POST_SCHEDULE = Cron(0, "12", "*", "*", "?", "*")
 
 
 app = Chalice(app_name='resetter')

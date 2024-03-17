@@ -2,7 +2,7 @@
 
 import urllib.request, urllib.error, urllib.parse, json, traceback, time
 from datetime import datetime, timedelta
-from .reset_lib import joinOr, sentenceCap, NoGameException, NoTeamException, toOrdinal
+from .reset_lib import joinOr, sentenceCap, NoGameException, NoTeamException, toOrdinal, RESET_RICH_SLACK,RESET_TEXT
 from .ncaa_espn_lib import ncaaNickDict, displayOverrides, iaa, validFbSet
 
 SCOREBOARD_ROOT_URL = "http://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard"
@@ -193,7 +193,7 @@ def status(game):
 	return sentenceCap(status)
 
 
-def get(team,forceReload=False,debug=False,file=None,ffwd=None,date=None):
+def get(team,forceReload=False,debug=False,file=None,ffwd=None,date=None,gameFormat=RESET_TEXT):
 	
 	global __MOD
 
