@@ -37,7 +37,7 @@ gameTimeLocalTBAPlaceholder = "3:33:00 AM"
 # in mobile.xml, get home tz timecode from <media><keywords><keyword type="sv_id" value="160430_132609"/> ET.CT.MT.MST.PT; can infer UTC diff via msxml: <game time_date_hm_lg="2016/04/30 8:10" time_zone_hm_lg="-4" home_time="5:10" 
 
 INACTIVE_GAME_STATUS_CODES = ["Postponed", "Pre-Game", "Preview", "Warmup"]
-PREGAME_STATUS_CODES = ["Pre-Game", "Preview", "Warmup", "Delayed Start","Scheduled"]
+PREGAME_STATUS_CODES = ["Pre-Game", "Preview", "Warmup", "Delayed Start","Scheduled","Delayed Start: Rain"]
 UPCOMING_STATUS_CODES = ["Pre-Game", "Warmup"]
 UNDERWAY_STATUS_CODES = ["In Progress", "Manager Challenge", "Review"]
 FINAL_STATUS_CODES = ["Final", "Game Over", "Completed Early", "Completed Early: Rain", "Final: Tied"]
