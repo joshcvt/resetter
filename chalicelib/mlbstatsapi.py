@@ -13,6 +13,7 @@ ROLLOVER_LOCALTIME_INT = 1000		# for resetter this is UTC because Lambda runs in
 PLAYOFF_GAME_TYPES = ['F','D','L','W']
 FILTER_STANDARD = "FILTER_STANDARD"
 FILTER_OVERRIDETV = "FILTER_OVERRIDETV"
+STAT_MISS = "STAT_MISS"
 
 #logLevel = logging.DEBUG
 #logFN = "resetter.log"
@@ -103,7 +104,7 @@ def getReset(g,team,fluidVerbose,filterMode=FILTER_STANDARD):
 		if stat in ANNOUNCE_STATUS_CODES:	# delayed start
 			reset = reset[:-1] + " (" + stat.lower() + ")."
 
-	if stat in UNDERWAY_STATUS_CODES:
+	elif stat in UNDERWAY_STATUS_CODES:
 		
 		inningState = g["linescore"]["inningState"].lower()
 		reset = placeAndScore(g) + ", " + inningState + " of the " + g["linescore"]["currentInningOrdinal"] + ". "
@@ -143,7 +144,7 @@ def getReset(g,team,fluidVerbose,filterMode=FILTER_STANDARD):
 			else:
 				reset += outs + " outs. "
 
-	if stat in FINAL_STATUS_CODES:
+	elif stat in FINAL_STATUS_CODES:
 		reset += "Final "
 		if is_dh:
 			reset += "of game " + str(g["gameNumber"]) + " "
@@ -157,12 +158,17 @@ def getReset(g,team,fluidVerbose,filterMode=FILTER_STANDARD):
 			homeaway = "national"
 		else:
 			homeaway = "away" if team == g["teams"]["away"]["team"]["abbreviation"] else "home"
+		reset += STAT_MISS
 		tvNets = getTVNets(g,homeaway)
 		reset += (' TV: ' + tvNets + '. ') if (tvNets != None and tvNets != "") else ""
 	
 	if (len(reset) == 0):
+		reset = STAT_MISS
+
+	if (STAT_MISS in reset):
 		# common path for various weird statuses with a specific cutout for postponed
-		reset = g["teams"]["away"]["team"]["teamName"] + " at " + g["teams"]["home"]["team"]["teamName"] 
+		reset = reset.replace(STAT_MISS, g["teams"]["away"]["team"]["teamName"] + " at " + g["teams"]["home"]["team"]["teamName"] )
+		
 		if is_dh:
 			reset += ' (game ' + str(g["gameNumber"]) + ')'
 		reset += " is " + stat.lower() 
@@ -185,8 +191,9 @@ def getReset(g,team,fluidVerbose,filterMode=FILTER_STANDARD):
 	
 def loadSAPIScoreboard(sapiURL, scheduleDT):
 	
-	#logging.debug( "Running scoreboard for " + scheduleDT.strftime("%Y-%m-%d"))
+	#print( "Running scoreboard for " + scheduleDT.strftime("%Y-%m-%d"))
 	scheduleUrl = scheduleDT.strftime(sapiURL)
+	#print(scheduleUrl)
 	
 	try:
 		usock = urllib.request.urlopen(scheduleUrl,timeout=10)
