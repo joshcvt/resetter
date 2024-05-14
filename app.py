@@ -10,7 +10,7 @@ from datetime import date, timedelta
 # what if we just hit /reset?
 DEFAULT_PARAM = "WSH"
 
-SCHEDULED_POST_CHANNEL = "backtalk" #"general"
+SCHEDULED_POST_CHANNEL = "general"
 # the reason to do this with explicit dates is that it gets you around when the league rolls over what it thinks "today" is.
 # note this trusts UTC date to be the same as you think the date is when you call it. to fix that you need this module to be
 # timezone aware. That's... a future issue.
@@ -22,9 +22,8 @@ SCHEDULED_POSTS = [
 	{"request":"mlb "+ YESTERDAY.isoformat(),"banner":"Last night's MLB scores: "},
 	{"request":"mlb "+ TODAY.isoformat(),"banner":"Tonight's MLB games: "} #,"useColumnarPost":True}
 ]
-# note: to disable this you must also comment out the @app.schedule line below
-#SCHEDULED_POST_SCHEDULE = Cron(0, "12", "*", "*", "?", "*") #Cron(9,3,"*","*","?","*") #
-SCHEDULED_POST_SCHEDULE = Cron(58, 0, "*", "*", "?", "*") #Cron(9,3,"*","*","?","*") #
+# note: to disable this you must also comment out the @app.schedule annotation below
+SCHEDULED_POST_SCHEDULE = Cron(0, "12", "*", "*", "?", "*")
 
 
 app = Chalice(app_name='resetter')
