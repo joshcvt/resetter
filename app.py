@@ -20,9 +20,9 @@ SCHEDULED_POSTS = [
 	{"request":"nhl "+ YESTERDAY.isoformat(),"banner":"Last night's NHL scores: "},
 	{"request":"nhl "+ TODAY.isoformat(),"banner":"Tonight's NHL games: "},
 	{"request":"mlb "+ YESTERDAY.isoformat(),"banner":"Last night's MLB scores: "},
-	{"request":"mlb "+ TODAY.isoformat(),"banner":"Tonight's MLB games: "}
+	{"request":"mlb "+ TODAY.isoformat(),"banner":"Tonight's MLB games: "} #,"useColumnarPost":True}
 ]
-# note: to disable this you must also comment out the @app.schedule line below
+# note: to disable this you must also comment out the @app.schedule annotation below
 SCHEDULED_POST_SCHEDULE = Cron(0, "12", "*", "*", "?", "*")
 
 
@@ -61,4 +61,4 @@ def index():
 @app.schedule(SCHEDULED_POST_SCHEDULE)
 def scoreboardPoster(event):
 	for sp in SCHEDULED_POSTS:
-		postSlack(sp["request"],banner=sp["banner"],channel=SCHEDULED_POST_CHANNEL)
+		postSlack(sp["request"],banner=sp["banner"],channel=SCHEDULED_POST_CHANNEL,useColumnarPost=(sp["useColumnarPost"] if ("useColumnarPost" in sp) else False))

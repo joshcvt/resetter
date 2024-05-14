@@ -325,7 +325,7 @@ def phrase_game(game,format=RESET_TEXT):
         try:
             gametime = local_game_time(game)
             if (format == RESET_RICH_SLACK):
-                ret += " &em; *" + gametime + "*."
+                ret += ", *" + gametime + "*."
             else:
                 ret += " starts at " + gametime + "."
         except ShortDelayException:

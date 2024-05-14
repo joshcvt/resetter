@@ -11,7 +11,10 @@ import urllib
 from .mlbstatsapi import get as get_mlb
 from .ncaaf_espn import get as get_ncaaf
 from .nhl import get as get_nhl
-from .reset_lib import joinOr, NoGameException, NoTeamException, DabException, RESET_RICH_SLACK, RESET_TEXT
+from .reset_lib import joinOr, NoGameException, NoTeamException, DabException, RESET_RICH_SLACK, RESET_TEXT, RESET_SHORT_SLACK
+
+# magic text
+NO_GAMES = "no games"
 
 global slackUrl 
 slackUrl = None
@@ -32,6 +35,7 @@ def get_team(team,debug=False,inOverride=False,gameFormat=RESET_TEXT):
 	# first, try if the sport's defined.
 	try:
 		linedict = sport_strip(team)
+		print("linedict after sport_strip: " + str(linedict))
 		team = linedict["team"]
 		sport = linedict["sport"]
 		ffwd = True if "ffwd" in linedict else False
@@ -45,9 +49,9 @@ def get_team(team,debug=False,inOverride=False,gameFormat=RESET_TEXT):
 				team = "scoreboard"
 			try:
 				if inOverride:
-					rv = fns[sport](team,inOverride=inOverride,ffwd=ffwd,date=date)
+					rv = fns[sport](team,inOverride=inOverride,ffwd=ffwd,date=date,gameFormat=gameFormat)
 				else:
-					rv = fns[sport](team,ffwd=ffwd,date=date)
+					rv = fns[sport](team,ffwd=ffwd,date=date,gameFormat=gameFormat)
 				if rv:
 					return rtext(rv)
 			#except NoGameException as e:
@@ -197,8 +201,8 @@ def getSlackUrl():
 def postSlack(whichContent="nhl",channel="backtalk",banner="",useColumnarPost=False):
 	
 	try:
-		rtext = get_team(whichContent,gameFormat=RESET_RICH_SLACK)
-		if "no games" in rtext.lower():
+		rtext = get_team(whichContent,gameFormat=(RESET_SHORT_SLACK if useColumnarPost else RESET_RICH_SLACK))
+		if NO_GAMES in rtext.lower():
 			return	# skip slack if there's no games
 		
 		if not useColumnarPost:
@@ -208,6 +212,12 @@ def postSlack(whichContent="nhl",channel="backtalk",banner="",useColumnarPost=Fa
 		else:
 			# what we get back is splittable on `\n`
 			lines = rtext.split("\n")
+			# but if it's more than 10 items, we have to recombine.
+			if len(lines) > 10:
+				divider = round(len(lines)/ 2)
+				set1 = "\n".join(lines[0:divider])
+				set2 = "\n".join(lines[divider:len(lines)])
+				lines = [set1,set2]
 			payloadDict = {"blocks":[]}
 			if banner:
 				payloadDict["blocks"].append({"type": "header","text": {"type": "plain_text","text": banner}})

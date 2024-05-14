@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from os import sys
 
 from .nat_lib import *
-from .reset_lib import NoGameException, NoTeamException, DabException,RESET_RICH_SLACK,RESET_TEXT
+from .reset_lib import NoGameException, NoTeamException, DabException,RESET_RICH_SLACK,RESET_TEXT,RESET_SHORT_SLACK
 
 ROLLOVER_LOCALTIME_INT = 1000		# for resetter this is UTC because Lambda runs in UTC
 PLAYOFF_GAME_TYPES = ['F','D','L','W']
@@ -22,7 +22,7 @@ def iso8601toLocalTZ(isoUTC,preferredTZName="America/New_York"):
 
 	gameTime = dateutil.parser.parse(isoUTC)
 	localGameTime = gameTime.replace(tzinfo=timezone.utc).astimezone(ZoneInfo(preferredTZName))
-	return localGameTime.strftime("%-I:%M ") + localGameTime.tzname()
+	return localGameTime.strftime("%-I:%M %p ").replace(" PM","") + localGameTime.tzname()
 
 """Find relevant game nodes (to team or "schedule"/"scoreboard") and filter out the rest."""
 def findGameNodes(sapiDict,team):
@@ -84,13 +84,15 @@ def is_doubleheader(g):
 	return (g["doubleHeader"] in ("Y","S"))
 
 
-def getReset(g,team,fluidVerbose,filterMode=FILTER_STANDARD):
+def getReset(g,team,fluidVerbose,filterMode=FILTER_STANDARD,gameFormat=RESET_TEXT):
 	if g == None:
 		return "No game today."
 
 	stat = g["status"]["detailedState"]
 	reset = ""
 	is_dh = is_doubleheader(g)
+
+	print("in getReset, I'm getting " + team + " as " + gameFormat)
 	
 	if filterMode == FILTER_OVERRIDETV:
 		if team not in (g["teams"]["away"]["team"]["abbreviation"],g["teams"]["home"]["team"]["abbreviation"]):
@@ -99,7 +101,8 @@ def getReset(g,team,fluidVerbose,filterMode=FILTER_STANDARD):
 			team = "scoreboard"
 
 	if stat in PREGAME_STATUS_CODES:
-		reset += getProbables(g,team,verbose=fluidVerbose)
+		#reset += getProbables(g,team,verbose=fluidVerbose)
+		reset += getProbables(g,team,verbose=fluidVerbose,gameFormat=gameFormat)
 
 		if stat in ANNOUNCE_STATUS_CODES:	# delayed start
 			reset = reset[:-1] + " (" + stat.lower() + ")."
@@ -211,7 +214,7 @@ def loadSAPIScoreboard(sapiURL, scheduleDT):
 	
 	return None
 
-def getPitcher(g,ah):
+def getPitcher(g,ah,verbose=True):
 	if ah not in ("away","home"):
 		return None
 	
@@ -219,18 +222,25 @@ def getPitcher(g,ah):
 		pstr = "TBA"
 	else:
 		pitcher = g["teams"][ah]["probablePitcher"]
-		pstr = pitcher["fullName"]
-		# this was for a rostername of "Soroka, M", which we don't have yet in SAPI 
-		# have to get that as (http://statsapi.mlb.com + pitcher["link"])["people"][0]["boxscoreName"]
-		#if "," in pstr:
-		#	pstr = pstr + "."
+		pstr = ""
+		try:
+			usock = urllib.request.urlopen("http://statsapi.mlb.com" + pitcher["link"],timeout=3)
+			pitcherDict = json.load(usock)
+			pstr = pitcherDict["people"][0]["boxscoreName"]
+		except:
+			pstr = pitcher["fullName"]
+		
+		if "," in pstr:
+			pstr = pstr + "."
 		pstr = pstr + " " + getWLERA(pitcher)
-	return (g["teams"][ah]["team"]["shortName"] + " (" + pstr + ")")
+	
+	tNameSelector = "shortName" if verbose else "abbreviation"
+	return (g["teams"][ah]["team"][tNameSelector] + " (" + pstr + ")")
 
 def getWLERA(pitcher):
 	for sg in pitcher["stats"]:
 		if sg["group"]["displayName"] == "pitching" and sg["type"]["displayName"] == "statsSingleSeason":
-			return str(sg["stats"]["wins"]) + "-" + str(sg["stats"]["losses"]) + ", " + sg["stats"]["era"]
+			return str(sg["stats"]["wins"]) + "-" + str(sg["stats"]["losses"]) + " " + sg["stats"]["era"]
 	return ""
 
 def getTVNets(g,ah=None,suppressIntl=True):
@@ -247,18 +257,22 @@ def getTVNets(g,ah=None,suppressIntl=True):
 					ret.append(name)
 	return ", ".join(ret)
 
-def getProbables(g,tvTeam=None,preferredTZ="America/New_York",verbose=True):
+def getProbables(g,tvTeam=None,preferredTZ="America/New_York",verbose=True,gameFormat=RESET_TEXT):
 	if g == None:
 		return None
-
+	
+	pitcherVerbosity = False if gameFormat in (RESET_SHORT_SLACK) else True
+	
 	if not verbose:
 		runningStr = g["teams"]["away"]["team"]["teamName"] + " at " + g["teams"]["home"]["team"]["teamName"]
 	else:
-		runningStr = getPitcher(g,"away") + " at " + getPitcher(g,"home")
+		runningStr = getPitcher(g,"away",pitcherVerbosity) + " at " + getPitcher(g,"home",pitcherVerbosity)
 
 	if is_doubleheader(g):
 		runningStr += ' (game ' + str(g["gameNumber"]) + ')'
-	runningStr += " starts at " + iso8601toLocalTZ(g["gameDate"]) + "."
+	
+	startStr = ", *" + iso8601toLocalTZ(g["gameDate"]) + "*." #if ((gameFormat == RESET_SHORT_SLACK) or (not verbose)) else " starts at "
+	runningStr += startStr #+ iso8601toLocalTZ(g["gameDate"]) + "."
 	
 	if tvTeam and (tvTeam not in ("suppress","scoreboard","schedule")):
 		# we used to suppress playoff display here. I don't think we need to anymore.
@@ -303,6 +317,7 @@ def get(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False,date=Non
 	else:
 		todayDT = datetime.now() - timedelta(minutes=((localRollover/100)*60+(localRollover%100)))
 	
+	print("loading scoreboard request '%s' from %s %s for %s" % (team, statsApiScheduleUrl, todayDT.strftime("%m/%d/%Y, %H:%M:%S"),gameFormat ))
 	sapiScoreboard = loadSAPIScoreboard(statsApiScheduleUrl,todayDT)
 	
 	if sapiScoreboard:
@@ -325,7 +340,7 @@ def get(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False,date=Non
 	rv = []
 	for gn in gns:
 		try:
-			resetVal = getReset(gn,vtoc[team],fluidVerbose, filterMode)
+			resetVal = getReset(gn,vtoc[team],fluidVerbose, filterMode,gameFormat)
 		except Exception as resetExcept:
 			print("This all blew up as " + str(resetExcept) + "\n" + str(gn))
 			resetVal = None
