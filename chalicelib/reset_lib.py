@@ -2,6 +2,7 @@
 
 RESET_TEXT = "RESET_TEXT"
 RESET_RICH_SLACK = "RESET_RICH_SLACK"
+RESET_SHORT_SLACK = "RESET_SHORT_SLACK"
 
 def joinOr(li):
 	if li.__class__ != list:

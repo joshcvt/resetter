@@ -10,7 +10,7 @@ from datetime import date, timedelta
 # what if we just hit /reset?
 DEFAULT_PARAM = "WSH"
 
-SCHEDULED_POST_CHANNEL = "general"
+SCHEDULED_POST_CHANNEL = "backtalk" #"general"
 # the reason to do this with explicit dates is that it gets you around when the league rolls over what it thinks "today" is.
 # note this trusts UTC date to be the same as you think the date is when you call it. to fix that you need this module to be
 # timezone aware. That's... a future issue.
@@ -20,10 +20,11 @@ SCHEDULED_POSTS = [
 	{"request":"nhl "+ YESTERDAY.isoformat(),"banner":"Last night's NHL scores: "},
 	{"request":"nhl "+ TODAY.isoformat(),"banner":"Tonight's NHL games: "},
 	{"request":"mlb "+ YESTERDAY.isoformat(),"banner":"Last night's MLB scores: "},
-	{"request":"mlb "+ TODAY.isoformat(),"banner":"Tonight's MLB games: "}
+	{"request":"mlb "+ TODAY.isoformat(),"banner":"Tonight's MLB games: "} #,"useColumnarPost":True}
 ]
 # note: to disable this you must also comment out the @app.schedule line below
-SCHEDULED_POST_SCHEDULE = Cron(0, "12", "*", "*", "?", "*")
+#SCHEDULED_POST_SCHEDULE = Cron(0, "12", "*", "*", "?", "*") #Cron(9,3,"*","*","?","*") #
+SCHEDULED_POST_SCHEDULE = Cron(58, 0, "*", "*", "?", "*") #Cron(9,3,"*","*","?","*") #
 
 
 app = Chalice(app_name='resetter')
@@ -61,4 +62,4 @@ def index():
 @app.schedule(SCHEDULED_POST_SCHEDULE)
 def scoreboardPoster(event):
 	for sp in SCHEDULED_POSTS:
-		postSlack(sp["request"],banner=sp["banner"],channel=SCHEDULED_POST_CHANNEL)
+		postSlack(sp["request"],banner=sp["banner"],channel=SCHEDULED_POST_CHANNEL,useColumnarPost=(sp["useColumnarPost"] if ("useColumnarPost" in sp) else False))
