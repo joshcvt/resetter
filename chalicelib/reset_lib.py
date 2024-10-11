@@ -47,6 +47,59 @@ def toOrdinal(num):
 		return str(num) + "th"
 	return "num"
 
+def dateParse(instr):
+	# if this is a date, send it back as a Date. If anything breaks, return False
+	# supported formats: YYYY-MM-dd, MM-dd-YYYY, MM-dd, MM/dd/YYYY, MM/dd
+	
+	try:
+		dashed = instr.split("-")
+		slashed = instr.split("/")
+		splits = dashed if len(dashed) > len(slashed) else slashed
+		#print("dateparse splits: " + str(splits))
+		if len(splits) <= 1:
+			return False
+		for idx, s in enumerate(splits):
+			splits[idx] = int(s)
+
+		if len(splits) == 3:
+			# is year first or last?
+			if splits[0] > 1000:
+				return date(splits[0],splits[1],splits[2])
+			else:
+				return date(splits[2],splits[0],splits[1])
+		elif len(splits) == 2:
+			today = date.today()
+			return date(today.year,splits[0],splits[1])
+	except Exception as e:
+		#print("hey, dateparse blew up: " + str(e))
+		return False
+
+	return False
+
+
+def rtext(retList):
+	
+	if not retList:
+		retList = [""]
+	elif (retList.__class__ != list):
+		retList = [retList]
+	
+	if len(retList) > 1:
+		rtext = '\n'.join(retList)
+	else:
+		rtext = " ".join(retList)
+	
+	return rtext
+
+def getSsmParam(name,decrypt=True):
+	from boto3 import client
+
+	try:
+		return client('ssm').get_parameter(Name=name,WithDecryption=decrypt)['Parameter']['Value']
+	except Exception as e:
+		print("SSM fetch for " + name + " failed: " + str(e))
+		return None
+
 
 class NoTeamException(Exception):
 	pass

@@ -18,6 +18,8 @@ STAT_MISS = "STAT_MISS"
 #logLevel = logging.DEBUG
 #logFN = "resetter.log"
 
+vtoc = None
+
 def iso8601toLocalTZ(isoUTC,preferredTZName="America/New_York"):
 
 	gameTime = dateutil.parser.parse(isoUTC)
@@ -36,25 +38,24 @@ def findGameNodes(sapiDict,team):
 			for gm in sapiDate["games"]:
 				if ((gm["teams"]["home"]["team"]["abbreviation"] == team) or (gm["teams"]["away"]["team"]["abbreviation"] == team)):
 					ret.append(gm)
-	
 	return ret
 
 
 def buildVarsToCode():
-	vtoc = {"schedule":"schedule", "scoreboard":"scoreboard"}
+	local_vtoc  = {"schedule":"schedule", "scoreboard":"scoreboard"}
 	for k in codeToVariants:
 		for var in codeToVariants[k]:
-			if var in vtoc:
-				raise Exception("OOPS: trying to duplicate pointer " + var + " as " + k + ", it's already " + vtoc[var])
+			if var in local_vtoc :
+				raise Exception("OOPS: trying to duplicate pointer " + var + " as " + k + ", it's already " + local_vtoc [var])
 			else:
-				vtoc[var] = k
-				vtoc[var.lower()] = k
-				vtoc[var.upper()] = k
+				local_vtoc [var] = k
+				local_vtoc [var.lower()] = k
+				local_vtoc [var.upper()] = k
 		# and before we go, do k = k too
-		vtoc[k] = k
-		vtoc[k.lower()] = k	# it's already upper
+		local_vtoc [k] = k
+		local_vtoc [k.lower()] = k	# it's already upper
 		
-	return vtoc
+	return local_vtoc 
 
 def placeAndScore(g):
 
@@ -92,8 +93,6 @@ def getReset(g,team,fluidVerbose,filterMode=FILTER_STANDARD,gameFormat=RESET_TEX
 	reset = ""
 	is_dh = is_doubleheader(g)
 
-	print("in getReset, I'm getting " + team + " as " + gameFormat)
-	
 	if filterMode == FILTER_OVERRIDETV:
 		if team not in (g["teams"]["away"]["team"]["abbreviation"],g["teams"]["home"]["team"]["abbreviation"]):
 			# in this situation, we want to return TV only if it's a national game. 
@@ -196,7 +195,6 @@ def loadSAPIScoreboard(sapiURL, scheduleDT):
 	
 	#print( "Running scoreboard for " + scheduleDT.strftime("%Y-%m-%d"))
 	scheduleUrl = scheduleDT.strftime(sapiURL)
-	#print(scheduleUrl)
 	
 	try:
 		usock = urllib.request.urlopen(scheduleUrl,timeout=10)
@@ -283,15 +281,14 @@ def getProbables(g,tvTeam=None,preferredTZ="America/New_York",verbose=True,gameF
 	
 	return runningStr
 
-
-def get(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False,date=None,gameFormat=RESET_TEXT):
-
+def getGameNodesForTeam(team,rewind=False,ffwd=False,inOverride=False,date=None):
+	global vtoc
+	if not vtoc:
+		vtoc = buildVarsToCode()
+	
 	#logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',filename=logFN, level=logLevel)
 	
 	localRollover = ROLLOVER_LOCALTIME_INT
-	filterMode = FILTER_STANDARD
-	if "tv" == inOverride:
-		filterMode = FILTER_OVERRIDETV
 	if date and (rewind or ffwd):
 		raise NoGameException("mlbstatsapi.get can either take a literal date or rewind/ffwd, but not both. Returning no games.")
 	# for testing
@@ -300,8 +297,6 @@ def get(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False,date=Non
 		localRollover += 2400
 	if ffwd:
 		localRollover -= 2400
-	
-	vtoc = buildVarsToCode()
 	
 	teamLiteral = team
 	team = team.strip().lower()
@@ -317,13 +312,13 @@ def get(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False,date=Non
 	else:
 		todayDT = datetime.now() - timedelta(minutes=((localRollover/100)*60+(localRollover%100)))
 	
-	print("loading scoreboard request '%s' from %s %s for %s" % (team, statsApiScheduleUrl, todayDT.strftime("%m/%d/%Y, %H:%M:%S"),gameFormat ))
+	print("loading scoreboard request '%s' from %s %s" % (team, statsApiScheduleUrl, todayDT.strftime("%m/%d/%Y, %H:%M:%S")))
 	sapiScoreboard = loadSAPIScoreboard(statsApiScheduleUrl,todayDT)
 	
 	if sapiScoreboard:
 		# this is where it gets a little different for the override case. for override=tv, we want to
 		# get a full scoreboard, but do something special with the team.
-		if filterMode == FILTER_OVERRIDETV:
+		if ("tv" == inOverride):
 			gns = findGameNodes(sapiScoreboard,vtoc["scoreboard"])
 		else:
 			gns = findGameNodes(sapiScoreboard,vtoc[team])
@@ -336,6 +331,20 @@ def get(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False,date=Non
 		else:
 			ngstr = "No game today for " + team + "."
 		raise NoGameException(ngstr)
+	
+	return gns
+
+def get(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False,date=None,gameFormat=RESET_TEXT):
+	
+	global vtoc
+	if not vtoc:
+		vtoc = buildVarsToCode()
+	
+	filterMode = FILTER_STANDARD
+	if "tv" == inOverride:
+		filterMode = FILTER_OVERRIDETV
+
+	gns = getGameNodesForTeam(team,rewind,ffwd,inOverride,date)
 	
 	rv = []
 	for gn in gns:
@@ -351,3 +360,23 @@ def get(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False,date=Non
 	return rv
 
 
+def transitionPoller(team):
+	# monitor games for team occurring on the current date for status transitions. when they do, return what kind of transition it is, or None for no transition.
+
+	# types of transitions:
+	# pregame -> active
+	# pregame -> delayed
+	# pregame -> postponed
+	# active -> suspended
+	# active -> final
+	# active -> postponed
+	# delayed -> active
+	# delayed -> suspended
+	# delayed -> postponed
+	# delayed -> final
+	# suspended -> final
+	# suspended -> postponed
+
+
+
+	return
