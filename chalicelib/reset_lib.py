@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from datetime import date
+
 RESET_TEXT = "RESET_TEXT"
 RESET_RICH_SLACK = "RESET_RICH_SLACK"
 RESET_SHORT_SLACK = "RESET_SHORT_SLACK"
@@ -50,7 +52,6 @@ def toOrdinal(num):
 def dateParse(instr):
 	# if this is a date, send it back as a Date. If anything breaks, return False
 	# supported formats: YYYY-MM-dd, MM-dd-YYYY, MM-dd, MM/dd/YYYY, MM/dd
-	
 	try:
 		dashed = instr.split("-")
 		slashed = instr.split("/")
