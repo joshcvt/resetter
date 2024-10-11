@@ -13,4 +13,5 @@ samples/
 .venv/
 
 .terraform
+.terraform.lock.hcl
 terraform.tfstate

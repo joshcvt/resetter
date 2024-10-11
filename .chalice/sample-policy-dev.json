@@ -17,8 +17,20 @@
             "ssm:GetParameters"
         ],
         "Resource": [
-            "arn:aws:ssm:us-east-1:123456789012:parameter/resetter/slack_web_hook_url"
+            "arn:aws:ssm:us-east-1:123456789012:parameter/resetter/slack_web_hook_url",
+            "arn:aws:ssm:us-east-1:123456789012:parameter/resetter/bsky_username",
+            "arn:aws:ssm:us-east-1:123456789012:parameter/resetter/bsky_apppassword"
         ]
-    }
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:UpdateTable"
+        ],
+        "Resource": "arn:aws:dynamodb:us-east-1:123456789012:table/resetter-game-status"
+      }
     ]
-  }
+}

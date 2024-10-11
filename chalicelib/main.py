@@ -11,14 +11,15 @@ import urllib
 from .mlbstatsapi import get as get_mlb
 from .ncaaf_espn import get as get_ncaaf
 from .nhl import get as get_nhl
-from .reset_lib import joinOr, NoGameException, NoTeamException, DabException, RESET_RICH_SLACK, RESET_TEXT, RESET_SHORT_SLACK
+from .reset_lib import joinOr, dateParse, rtext, getSsmParam, NoGameException, NoTeamException, DabException, RESET_RICH_SLACK, RESET_TEXT, RESET_SHORT_SLACK
 
 # magic text
 NO_GAMES = "no games"
 
-global slackUrl 
+# globals
 slackUrl = None
-
+bskyUsername = None
+bskyPassword = None
 
 class NoSportException(Exception):
 	pass
@@ -108,21 +109,6 @@ def get_team(team,debug=False,inOverride=False,gameFormat=RESET_TEXT):
 		retList = "I'm sorry, I can't reset " + team + "."
 	
 	return rtext(retList)
-	
-
-def rtext(retList):
-	
-	if not retList:
-		retList = [""]
-	elif (retList.__class__ != list):
-		retList = [retList]
-	
-	if len(retList) > 1:
-		rtext = '\n'.join(retList)
-	else:
-		rtext = " ".join(retList)
-	
-	return rtext
 
 	
 def sport_strip(team):
@@ -153,50 +139,38 @@ def sport_strip(team):
 	else:
 		raise NoSportException()
 
-
-def dateParse(instr):
-	# if this is a date, send it back as a Date. If anything breaks, return False
-	# supported formats: YYYY-MM-dd, MM-dd-YYYY, MM-dd, MM/dd/YYYY, MM/dd
 	
-	try:
-		dashed = instr.split("-")
-		slashed = instr.split("/")
-		splits = dashed if len(dashed) > len(slashed) else slashed
-		#print("dateparse splits: " + str(splits))
-		if len(splits) <= 1:
-			return False
-		for idx, s in enumerate(splits):
-			splits[idx] = int(s)
-
-		if len(splits) == 3:
-			# is year first or last?
-			if splits[0] > 1000:
-				return date(splits[0],splits[1],splits[2])
-			else:
-				return date(splits[2],splits[0],splits[1])
-		elif len(splits) == 2:
-			today = date.today()
-			return date(today.year,splits[0],splits[1])
-	except Exception as e:
-		#print("hey, dateparse blew up: " + str(e))
-		return False
-
-	return False
-
 def getSlackUrl():
 	from boto3 import client
 	global slackUrl
 
 	if not slackUrl:
-		try:
-			slackUrl = client('ssm').get_parameter(Name='/resetter/slack_web_hook_url',WithDecryption=True)['Parameter']['Value']
-			
-		except Exception as e:
-			print("SSM fetch failed: " + str(e))
+		slackUrl = getSsmParam('/resetter/slack_web_hook_url')
 	else:
 		print("lambda was warm, using cached slackUrl")
-	return True
+	if slackUrl:
+		return True
+	else:
+		return None
 
+def getBsky():
+	from boto3 import client
+	global bskyUsername
+	global bskyPassword
+
+	if not bskyUsername:
+		bskyUsername = getSsmParam('/resetter/bsky_username',decrypt=False)
+	else:
+		print("lambda was warm, using cached bskyUsername")
+	if not bskyPassword:
+		bskyPassword = getSsmParam('/resetter/bsky_apppassword')
+	else:
+		print("lambda was warm, using cached bskyPassword")
+	
+	if (bskyUsername and bskyPassword):
+		return True
+	else:
+		return None
 
 def postSlack(whichContent="nhl",channel="backtalk",banner="",useColumnarPost=False):
 	
@@ -252,3 +226,18 @@ def _sendSlack(payloadDict,channel=None):
 	except Exception as e:
 		print("Couldn't post for some reason:\n" + str(e))
 		return
+
+def _sendBsky(message):
+	global bskyUsername
+	global bskyPassword
+
+	if not getBsky():
+		print("getBsky failed to populate values")
+		return
+	
+	from atproto import Client as BskyClient
+
+	client = BskyClient(base_url='https://bsky.social')
+	client.login(bskyUsername,bskyPassword)
+	post = client.send_post(message)
+	return post
