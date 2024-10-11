@@ -21,7 +21,7 @@ DEBUG_LEVEL = "DEBUG"
 validTeams = ("rangers","islanders","capitals","flyers","penguins","blue jackets","hurricanes","devils",
     "red wings","sabres","maple leafs","senators","canadiens","bruins","panthers","lightning",
     "predators","blackhawks","blues","wild","jets","stars","avalanche",
-    "oilers","flames","canucks","sharks","kings","ducks","coyotes","golden knights","kraken"
+    "oilers","flames","canucks","sharks","kings","ducks","golden knights","kraken","utahhc"
 )
 
 dabBacks = {
@@ -34,7 +34,7 @@ TEAM_ID_TO_OUTPUT = {11: 'Thrashers', 34: 'Whalers', 31: 'North Stars', 32: 'Nor
                      99: 'NHL', 17: 'Red Wings', 6: 'Bruins', 52: 'Jets', 28: 'Sharks', 5: 'Penguins', 14: 'Lightning', 4: 'Flyers', 10: 'Maple Leafs', 7: 'Sabres', 
                      12: 'Hurricanes', 53: 'Coyotes', 20: 'Flames', 8: 'Canadiens', 15: 'Capitals', 26: 'Kings', 23: 'Canucks', 21: 'Avalanche', 18: 'Predators', 
                      24: 'Ducks', 54: 'Golden Knights', 55: 'Kraken', 25: 'Stars', 27: 'Coyotes', 16: 'Blackhawks', 3: 'Rangers', 29: 'Blue Jackets', 13: 'Panthers', 
-                     22: 'Oilers', 30: 'Wild', 19: 'Blues', 9: 'Senators', 2: 'Islanders'}
+                     22: 'Oilers', 30: 'Wild', 19: 'Blues', 9: 'Senators', 2: 'Islanders', 59: 'Utah HC'}
 
 NHL_TEAMNAME_AS_PLACENAME = ["Rangers","Islanders"]
 
@@ -63,7 +63,8 @@ abbrDerefs = {
     'CHI':["blackhawks",'chi',"chicago",'hawks'],
     'NSH':["predators","preds","nashville","nsh","perds"],
     'DAL':["stars","dallas","northstars","north stars"],
-    'ARI':["coyotes",'phx','ari','arizona','yotes',"phoenix"],
+    #'ARI':["coyotes",'phx','ari','arizona','yotes',"phoenix"],
+    'UTA':["utahhc","utah","utah hockey club","utah hc","hockey club","hc"],
     'STL':["blues",'stl',"st. louis","st louis"],
     'COL':["avalanche",'avs','col','colorado'],
 
@@ -307,7 +308,23 @@ def fix_for_delay(ret):
 def phrase_game(game,format=RESET_TEXT):
 
     status = game["gameState"]
+    scheduleState = game["gameScheduleState"]
 
+    if scheduleState in ('CNCL', 'PPD'):   # weird because the gameState itself never leaves 'FUT'
+        
+        fullMap = {'CNCL':'cancelled','PPD':'postponed'}
+        ret = teamDisplayName(game["awayTeam"])
+        loc = game_loc(game)
+        if loc.startswith("at"):
+            ret += " vs. "
+        else:
+            ret += " at "
+        ret += teamDisplayName(game["homeTeam"])
+        if loc.startswith("at"):
+            ret += " " + game_loc(game)
+        ret += " is " + fullMap[scheduleState] + "."
+        return ret
+    
     if status in ("PRE","FUT"):        # scheduled, pregame
         loc = game_loc(game)
         ret = teamDisplayName(game["awayTeam"])
@@ -345,19 +362,6 @@ def phrase_game(game,format=RESET_TEXT):
     
     elif status in ("FINAL","OFF"):    # final, official
         ret = "Final " + game_loc(game) + ", " + scoreline(game) + final_qualifier(game) + "."
-        return ret
-        
-    elif (status == 9): # postponed TODO TODO TODO TODO TODO TODO
-        ret = teamDisplayName(game["awayTeam"])
-        loc = game_loc(game)
-        if loc.startswith("at"):
-            ret += " vs. "
-        else:
-            ret += " at "
-        ret += teamDisplayName(game["homeTeam"])
-        if loc.startswith("at"):
-            ret += " " + game_loc(game)
-        ret += " is postponed."
         return ret
         
     else:
