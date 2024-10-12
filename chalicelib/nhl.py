@@ -181,8 +181,13 @@ def teamDisplayName(team):
     sname = team["placeName"]["default"]
     if sname in overrides:
         return overrides[sname]
-    else:
-        return sname
+    # in 24-25, placeName switched to just 'New York' for both teams. We have the abbreviation though.
+    if team['abbrev'] == 'NYR':
+        return "NY Rangers"
+    elif team['abbrev'] == 'NYI':
+        return "NY Islanders"
+    # else...
+    return sname
 
 def scoreline(game):
     
