@@ -18,6 +18,11 @@ SCORENOW_URL_JSON = "https://api-web.nhle.com/v1/score/now"
 
 DEBUG_LEVEL = "DEBUG"
 
+GAME_RESET = "RESET"
+GAME_ISFINAL = "GAME_ISFINAL"
+GAME_PK = "GAME_PK"
+GAME_IS_WIN_FOR_TEAM = "GAME_IS_WIN_FOR_TEAM"
+
 validTeams = ("rangers","islanders","capitals","flyers","penguins","blue jackets","hurricanes","devils",
     "red wings","sabres","maple leafs","senators","canadiens","bruins","panthers","lightning",
     "predators","blackhawks","blues","wild","jets","stars","avalanche",
@@ -207,8 +212,6 @@ class LateStartException(Exception):
 
 def local_game_time(game):
     
-    global __MOD    
-            
     gameutc = datetime.strptime(game['startTimeUTC'],'%Y-%m-%dT%H:%M:%SZ')
     startdelay = datetime.utcnow() - gameutc
 
@@ -374,11 +377,15 @@ def phrase_game(game,format=RESET_TEXT):
     
         
 def get(team,fluidVerbose=False,rewind=False,ffwd=False,date=None,gameFormat=RESET_TEXT):
+    #return _getResetWithMetadata(team,fluidVerbose,rewind,ffwd,date,gameFormat)[GAME_RESET]
+    return "\n".join(x[GAME_RESET] for x in _getResetWithMetadata(team,fluidVerbose,rewind,ffwd,date,gameFormat))
 
-    global __MOD
-    
+"""
+Returns list of reset+metadata items.
+"""
+def _getResetWithMetadata(team,fluidVerbose=False,rewind=False,ffwd=False,date=None,gameFormat=RESET_TEXT):
+
     vtoc = buildVarsToCode()
-    #print vtoc
     
     tkey = team.lower().strip()
     
@@ -396,21 +403,63 @@ def get(team,fluidVerbose=False,rewind=False,ffwd=False,date=None,gameFormat=RES
         game = sb
     else:
         game = get_game(sb,vtoc[tkey])
+        #print("HEY, DEBUGGING FOR " + vtoc[tkey] + ":\n" + str(game))
     
-    if not game:    # valid for game = [] as well
+    if not game:    # game is None or empty list 
         if game.__class__ == list:
             ret = "No games today."
         else:    
             ret = "No game today for the " + capwords(vtoc[tkey]) + "."
         raise NoGameException(ret)
     
-    elif game.__class__ == list:    # full scoreboard or preseason split-squad
-        ret = ""
-        for g in game:
-            ret += sentenceCap(phrase_game(g,gameFormat)) + "\n"
-        if len(ret) > 0:
-            ret = ret[:-1]
-    else:
-        ret = sentenceCap(phrase_game(game,gameFormat))
+    elif game.__class__ != list:    # full scoreboard or preseason split-squad
+        game = [game]
+    ret = []
+    for g in game:
+        try:
+            gmeta = {
+                GAME_RESET: sentenceCap(phrase_game(g,gameFormat)),
+                GAME_ISFINAL:(('gameState' in g) and (g['gameState'] in ('FINAL','OFF'))),
+                GAME_PK:g['id'],
+                GAME_IS_WIN_FOR_TEAM: isGameWinForTeam(g,(tkey if tkey == "scoreboard" else vtoc[tkey]))            
+            }
+        except Exception as e:
+            print("Exception in game " + str(g['id']))
+            print(e)
+        #print ("for team " + (tkey if tkey == "scoreboard" else vtoc[tkey]) + ": " + str(gmeta))
+        ret.append(gmeta)
         
     return ret
+
+
+def getFinal(team,fluidVerbose=False,rewind=False,ffwd=False,date=None,gameFormat=RESET_TEXT):
+    # for the given team, if their game is final, get a primary key, a reset, and if it's a win. If it isn't final, return None.
+    # primary key is because there can be split-squad games preseason, and we'd like to reuse the framework for baseball doubleheaders too.
+    try:
+        gameMeta = _getResetWithMetadata(team,fluidVerbose,rewind,ffwd,date,gameFormat)
+        if gameMeta[GAME_ISFINAL]:
+            return(gameMeta[GAME_PK],gameMeta[GAME_RESET])
+        else:
+            return None
+
+    except NoGameException as e:
+        return None
+    except Exception as e:
+        return None
+
+def isGameWinForTeam(game,team):
+    if team == "scoreboard":
+        return False
+    
+    # first clear the non-final case
+    if not (('gameState' in game) and (game['gameState'] in ('FINAL','OFF'))):
+        return False
+    
+    if game['homeTeam']['abbrev'] == team:
+        thisTeam = game['homeTeam']
+        otherTeam = game['awayTeam']
+    else:
+        thisTeam = game['awayTeam']
+        otherTeam = game['homeTeam']
+    
+    return thisTeam['score'] > otherTeam['score']

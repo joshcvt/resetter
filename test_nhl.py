@@ -7,7 +7,7 @@ from datetime import datetime
 
 print("Should see: full scoreboard, then a couple single games or attempts, for three days. 'Today' starts at rolloverTime.\n")
 
-testTeams = ["scoreboard","canes","Washington","utah"]
+testTeams = ["scoreboard","canes","utah","seattle"]
 # scoreboard for all, canes for lookup table, canadiens for direct team name
 
 print("yesterday:")

@@ -4,8 +4,9 @@ import json
 from string import capwords
 import traceback
 from datetime import date
+import time # so we can get epoch time for TTL
 
-#import urllib3
+import boto3
 import urllib
 
 from .mlbstatsapi import get as get_mlb
@@ -16,10 +17,14 @@ from .reset_lib import joinOr, dateParse, rtext, getSsmParam, NoGameException, N
 # magic text
 NO_GAMES = "no games"
 
+DYNAMO_TABLE_NAME = "resetter-game-status"
+DYNAMO_DEFAULT_TTL = 60*60*24*7 # how many seconds from now to default TTL to
+
 # globals
 slackUrl = None
 bskyUsername = None
 bskyPassword = None
+ddbClient = None
 
 class NoSportException(Exception):
 	pass
@@ -153,17 +158,17 @@ def getSlackUrl():
 	else:
 		return None
 
-def getBsky():
+def getBsky(usernameSsm='/resetter/bsky_username',passwordSsm='/resetter/bsky_apppassword'):
 	from boto3 import client
 	global bskyUsername
 	global bskyPassword
 
 	if not bskyUsername:
-		bskyUsername = getSsmParam('/resetter/bsky_username',decrypt=False)
+		bskyUsername = getSsmParam(usernameSsm,decrypt=False)
 	else:
 		print("lambda was warm, using cached bskyUsername")
 	if not bskyPassword:
-		bskyPassword = getSsmParam('/resetter/bsky_apppassword')
+		bskyPassword = getSsmParam(passwordSsm)
 	else:
 		print("lambda was warm, using cached bskyPassword")
 	
@@ -241,3 +246,41 @@ def _sendBsky(message):
 	client.login(bskyUsername,bskyPassword)
 	post = client.send_post(message)
 	return post
+
+#gameId is PK
+#TTL is TTL
+#gameStateJson is string containing JSON game state
+def _getDdb(pk):
+	global ddbClient
+	try:
+		if not ddbClient:
+			ddbClient = boto3.client('dynamodb')
+		ddbRet = ddbClient.get_item(TableName=DYNAMO_TABLE_NAME,Key={'GameId':{'S':pk}},ProjectionExpression="GameStateJson")
+		if 'Item' in ddbRet:
+			return ddbRet['Item']['GameStateJson']['S']
+		else:
+			return None
+	
+	except(Exception) as e:
+		print(e)
+		return None
+	
+def _setDdb(pk,dictVal):
+	global ddbClient
+	try:
+		if not ddbClient:
+			ddbClient = boto3.client('dynamodb')
+	
+		ttlVal = str(int(time.time()) + DYNAMO_DEFAULT_TTL)
+		jsonVal = json.dumps(dictVal)
+		ret = ddbClient.put_item(TableName=DYNAMO_TABLE_NAME,Item={
+			'GameId':{'S':pk},
+			'TTL':{'N':ttlVal},
+			'GameStateJson':{'S':jsonVal}
+		})
+		return ret
+
+	except(Exception) as e:
+		print(e)
+		return None
+	
