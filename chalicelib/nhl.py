@@ -183,7 +183,12 @@ def teamDisplayName(team):
     # else the scoreboard version which has placeName but not name
     #"""we have this because Montreal venue/Montréal teamloc and St. Louis venue/St Louis shortname looks dumb."""
     overrides = {'Montréal':'Montreal','St Louis':'St. Louis',"Rangers":"NY Rangers","Islanders":"NY Islanders"}
-    sname = team["placeName"]["default"]
+    
+    #print("getting teamDisplayName for team " + str(team))
+    
+    # for the 4 Nations they didn't bother populating placename[default]. surprise!
+    sname = team["placeName"]["default"] if (len(team["placeName"]["default"].strip()) > 0) else team["commonName"]["default"]
+    
     if sname in overrides:
         return overrides[sname]
     # in 24-25, placeName switched to just 'New York' for both teams. We have the abbreviation though.
