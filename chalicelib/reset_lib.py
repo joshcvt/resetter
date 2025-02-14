@@ -1,10 +1,19 @@
 #!/usr/bin/env python
 
 from datetime import date
+import time # so we can get epoch time for TTL
+import json
+import boto3
 
 RESET_TEXT = "RESET_TEXT"
 RESET_RICH_SLACK = "RESET_RICH_SLACK"
 RESET_SHORT_SLACK = "RESET_SHORT_SLACK"
+
+DYNAMO_TABLE_NAME = "resetter-game-status"
+DYNAMO_DEFAULT_TTL = 60*60*24*7 # how many seconds from now to default TTL to
+#global
+ddbClient = None
+
 
 def joinOr(li):
 	if li.__class__ != list:
@@ -100,6 +109,44 @@ def getSsmParam(name,decrypt=True):
 	except Exception as e:
 		print("SSM fetch for " + name + " failed: " + str(e))
 		return None
+
+#gameId is PK
+#TTL is TTL
+#gameStateJson is string containing JSON game state
+def getDdb(pk):
+	global ddbClient
+	try:
+		if not ddbClient:
+			ddbClient = boto3.client('dynamodb')
+		ddbRet = ddbClient.get_item(TableName=DYNAMO_TABLE_NAME,Key={'GameId':{'S':pk}},ProjectionExpression="GameStateJson")
+		if 'Item' in ddbRet:
+			return ddbRet['Item']['GameStateJson']['S']
+		else:
+			return None
+	
+	except(Exception) as e:
+		print(e)
+		return None
+	
+def setDdb(pk,dictVal):
+	global ddbClient
+	try:
+		if not ddbClient:
+			ddbClient = boto3.client('dynamodb')
+	
+		ttlVal = str(int(time.time()) + DYNAMO_DEFAULT_TTL)
+		jsonVal = json.dumps(dictVal)
+		ret = ddbClient.put_item(TableName=DYNAMO_TABLE_NAME,Item={
+			'GameId':{'S':pk},
+			'TTL':{'N':ttlVal},
+			'GameStateJson':{'S':jsonVal}
+		})
+		return ret
+
+	except(Exception) as e:
+		print(e)
+		return None
+
 
 
 class NoTeamException(Exception):

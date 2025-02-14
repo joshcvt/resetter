@@ -433,12 +433,12 @@ def _getResetWithMetadata(team,fluidVerbose=False,rewind=False,ffwd=False,date=N
 
 
 def getFinal(team,fluidVerbose=False,rewind=False,ffwd=False,date=None,gameFormat=RESET_TEXT):
-    # for the given team, if their game is final, get a primary key, a reset, and if it's a win. If it isn't final, return None.
+    # for the given team, if their game is final, get a primary key, a reset, if it's final, and if it's a win. If it isn't final, return None.
     # primary key is because there can be split-squad games preseason, and we'd like to reuse the framework for baseball doubleheaders too.
     try:
         gameMeta = _getResetWithMetadata(team,fluidVerbose,rewind,ffwd,date,gameFormat)
         if gameMeta[GAME_ISFINAL]:
-            return(gameMeta[GAME_PK],gameMeta[GAME_RESET])
+            return(gameMeta[GAME_PK],gameMeta[GAME_RESET],gameMeta[GAME_ISFINAL],gameMeta[GAME_IS_WIN_FOR_TEAM])
         else:
             return None
 

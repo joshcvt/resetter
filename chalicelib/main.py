@@ -3,28 +3,16 @@
 import json
 from string import capwords
 import traceback
-from datetime import date
-import time # so we can get epoch time for TTL
 
-import boto3
-import urllib
 
 from .mlbstatsapi import get as get_mlb
 from .ncaaf_espn import get as get_ncaaf
 from .nhl import get as get_nhl
-from .reset_lib import joinOr, dateParse, rtext, getSsmParam, NoGameException, NoTeamException, DabException, RESET_RICH_SLACK, RESET_TEXT, RESET_SHORT_SLACK
-
+from .reset_lib import joinOr, dateParse, rtext, NoGameException, NoTeamException, DabException, RESET_RICH_SLACK, RESET_TEXT, RESET_SHORT_SLACK
+from .networks import sendSlack
 # magic text
 NO_GAMES = "no games"
 
-DYNAMO_TABLE_NAME = "resetter-game-status"
-DYNAMO_DEFAULT_TTL = 60*60*24*7 # how many seconds from now to default TTL to
-
-# globals
-slackUrl = None
-bskyUsername = None
-bskyPassword = None
-ddbClient = None
 
 class NoSportException(Exception):
 	pass
@@ -144,40 +132,7 @@ def sport_strip(team):
 	else:
 		raise NoSportException()
 
-	
-def getSlackUrl():
-	from boto3 import client
-	global slackUrl
-
-	if not slackUrl:
-		slackUrl = getSsmParam('/resetter/slack_web_hook_url')
-	else:
-		print("lambda was warm, using cached slackUrl")
-	if slackUrl:
-		return True
-	else:
-		return None
-
-def getBsky(usernameSsm='/resetter/bsky_username',passwordSsm='/resetter/bsky_apppassword'):
-	from boto3 import client
-	global bskyUsername
-	global bskyPassword
-
-	if not bskyUsername:
-		bskyUsername = getSsmParam(usernameSsm,decrypt=False)
-	else:
-		print("lambda was warm, using cached bskyUsername")
-	if not bskyPassword:
-		bskyPassword = getSsmParam(passwordSsm)
-	else:
-		print("lambda was warm, using cached bskyPassword")
-	
-	if (bskyUsername and bskyPassword):
-		return True
-	else:
-		return None
-
-def postSlack(whichContent="nhl",channel="backtalk",banner="",useColumnarPost=False):
+def postResetToSlack(whichContent="nhl",channel="backtalk",banner="",useColumnarPost=False):
 	
 	try:
 		rtext = get_team(whichContent,gameFormat=(RESET_SHORT_SLACK if useColumnarPost else RESET_RICH_SLACK))
@@ -206,81 +161,7 @@ def postSlack(whichContent="nhl",channel="backtalk",banner="",useColumnarPost=Fa
 					fields.append({"type": "plain_text","text": ln,"emoji": True})
 				payloadDict["blocks"].append({"type":"section","fields":fields})
 		print("DEBUG: payloadDict:\n" + json.dumps(payloadDict))
-		_sendSlack(payloadDict,channel)
+		sendSlack(payloadDict,channel)
 	except Exception as e:
 		print("postSlack failed on:\n" + str(e))
 
-
-
-def _sendSlack(payloadDict,channel=None):
-	#verbatim from natinal_bot
-
-	global slackUrl
-	if not getSlackUrl():
-		print("getSlackUrl failed to populate")
-		return
-	
-	try:
-		if channel != None and channel != "":
-			payloadDict["channel"] = channel
-
-		data = urllib.parse.urlencode({"payload": json.dumps(payloadDict)}).encode('utf-8')
-		req = urllib.request.Request(slackUrl, data=data)
-		response = urllib.request.urlopen(req)
-		print(str(response.read()))
-	except Exception as e:
-		print("Couldn't post for some reason:\n" + str(e))
-		return
-
-def _sendBsky(message):
-	global bskyUsername
-	global bskyPassword
-
-	if not getBsky():
-		print("getBsky failed to populate values")
-		return
-	
-	from atproto import Client as BskyClient
-
-	client = BskyClient(base_url='https://bsky.social')
-	client.login(bskyUsername,bskyPassword)
-	post = client.send_post(message)
-	return post
-
-#gameId is PK
-#TTL is TTL
-#gameStateJson is string containing JSON game state
-def _getDdb(pk):
-	global ddbClient
-	try:
-		if not ddbClient:
-			ddbClient = boto3.client('dynamodb')
-		ddbRet = ddbClient.get_item(TableName=DYNAMO_TABLE_NAME,Key={'GameId':{'S':pk}},ProjectionExpression="GameStateJson")
-		if 'Item' in ddbRet:
-			return ddbRet['Item']['GameStateJson']['S']
-		else:
-			return None
-	
-	except(Exception) as e:
-		print(e)
-		return None
-	
-def _setDdb(pk,dictVal):
-	global ddbClient
-	try:
-		if not ddbClient:
-			ddbClient = boto3.client('dynamodb')
-	
-		ttlVal = str(int(time.time()) + DYNAMO_DEFAULT_TTL)
-		jsonVal = json.dumps(dictVal)
-		ret = ddbClient.put_item(TableName=DYNAMO_TABLE_NAME,Item={
-			'GameId':{'S':pk},
-			'TTL':{'N':ttlVal},
-			'GameStateJson':{'S':jsonVal}
-		})
-		return ret
-
-	except(Exception) as e:
-		print(e)
-		return None
-	

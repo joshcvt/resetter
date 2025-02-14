@@ -2,7 +2,8 @@
 
 #from crypt import methods
 from chalice import Chalice, Cron, Rate
-from chalicelib.main import get_team, postSlack, gameMonitor
+from chalicelib.main import get_team, postResetToSlack
+from chalicelib.monitors import doMonitors
 
 from datetime import date, timedelta
 
@@ -24,9 +25,8 @@ SCHEDULED_POSTS = [
 # note: to disable this you must also comment out the @app.schedule annotation below
 SCHEDULED_POST_SCHEDULE = Cron(0, "12", "*", "*", "?", "*")
 
-GAME_OVER_CRON_RATE = Rate(1,unit=Rate.MINUTES)
-MONITOR_TEAMSET = {'nhl':["CAR"]}
-
+#GAME_OVER_CRON_RATE = Rate(1,unit=Rate.MINUTES)
+MONITOR_CRON_SCHEDULE = Cron("*","0-8,16-24","*","*","?","*")
 
 app = Chalice(app_name='resetter')
 
@@ -63,9 +63,9 @@ def index():
 @app.schedule(SCHEDULED_POST_SCHEDULE)
 def scoreboardPoster(event):
 	for sp in SCHEDULED_POSTS:
-		postSlack(sp["request"],banner=sp["banner"],channel=SCHEDULED_POST_CHANNEL,useColumnarPost=(sp["useColumnarPost"] if ("useColumnarPost" in sp) else False))
+		postResetToSlack(sp["request"],banner=sp["banner"],channel=SCHEDULED_POST_CHANNEL,useColumnarPost=(sp["useColumnarPost"] if ("useColumnarPost" in sp) else False))
 
-#@app.schedule(GAME_OVER_CRON_RATE)
-def monitor(event):
-	gameMonitor(MONITOR_TEAMSET)
-	
+
+@app.schedule(MONITOR_CRON_SCHEDULE)
+def monitorChecker(event):
+    doMonitors()
