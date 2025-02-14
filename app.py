@@ -66,6 +66,6 @@ def scoreboardPoster(event):
 		postResetToSlack(sp["request"],banner=sp["banner"],channel=SCHEDULED_POST_CHANNEL,useColumnarPost=(sp["useColumnarPost"] if ("useColumnarPost" in sp) else False))
 
 
-@app.schedule(MONITOR_CRON_SCHEDULE)
+#@app.schedule(MONITOR_CRON_SCHEDULE)
 def monitorChecker(event):
     doMonitors()
