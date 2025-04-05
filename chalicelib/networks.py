@@ -95,7 +95,5 @@ def sendBsky(message,username):
 
     client = BskyClient(base_url='https://bsky.social')
     client.login(username,bskyCreds[username])
-    print("commented out: would be sending %s",message)
-    #post = client.send_post(message)
-    post = 1
+    post = client.send_post(message)
     return post
