@@ -6,10 +6,11 @@
       "autogen_policy": false,
       "iam_policy_file": "policy-dev.json",
       "environment_variables": {
-        "MONITOR_SET_JSON":"[{'sport':'nhl','team':'CAR','notifier':'bsky','notifierUser':'peteypabbot.on29.net','message':'Test message'}]"
+        "MONITOR_SET_JSON":"[{\"sport\":\"mlb\",\"team\":\"WSH\",\"notifier\":\"bsky\",\"notifierUser\":\"journeybot.on29.net\",\"winOnly\":\"true\",\"message\":\"AND NOW IT'S TIME FOR SOME JOURNEY! https://www.youtube.com/watch?v=LatorN4P9aA\"}]"
       }
     }
   }, 
   "version": "2.0", 
   "app_name": "resetter"
 }
+

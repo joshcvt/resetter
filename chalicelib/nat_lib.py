@@ -65,7 +65,7 @@ codeToVariants = {
 	"SF":["San Francisco","S.F.","Giants","San Fran","San Francisco Giants"],
 	"LAD":["Los Angeles","L.A.","LA","Dodgers","Los Angeles Dodgers","L.A. Dodgers"],
 	"SD":["San Diego","S.D.","Padres","Pods","San Diego Padres","Friars"],
-	"ARI":["Arizona","Diamondbacks","D-Backs","Dee Backs","Arizona Diamondbacks","Snakes"],
+	"AZ":["Arizona","Diamondbacks","D-Backs","Dee Backs","Arizona Diamondbacks","Snakes","ARI"],
 	"COL":["Colorado","Rockies","Colorado Rockies","Rocks","Garbage Franchise","GarbageFranchise","#GarbageFranchise"],
 	
 	"NYY":["Yankees","New York Yankees","Yanks"],
@@ -81,7 +81,7 @@ codeToVariants = {
 	"CWS":["Chicago White Sox","White Sox","ChiSox","Shy Sox"],
 	
 	"LAA":["Angels","Los Angeles Angels","L.A. Angels of Anaheim","Anaheim"],
-	"OAK":["Oakland","Athletics","A's","Oakland Athletics","Oakland A's"],
+	"ATH":["Oakland","Athletics","A's","Oakland Athletics","Oakland A's","OAK","SAC","LV","Sacramento","Vegas","Las Vegas","Las Vegas A's","Sacramento A's","Las Vegas Athletics","Sacramento Athletics"],
 	"TEX":["Texas","Rangers","Texas Rangers"],
 	"HOU":["Houston","Astros","Stros","Houston Astros"],
 	"SEA":["Seattle","Mariners","Seattle Mariners","M's","Ems","6org","Six org","6 org","#6org"]
