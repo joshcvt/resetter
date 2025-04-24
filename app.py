@@ -26,8 +26,7 @@ SCHEDULED_POSTS = [
 SCHEDULED_POST_SCHEDULE = Cron(0, "12", "*", "*", "?", "*")
 
 #GAME_OVER_CRON_RATE = Rate(1,unit=Rate.MINUTES)
-# in DST which covers the entire baseball season, this is 1200-0600 -- should catch everything 
-MONITOR_CRON_SCHEDULE = Cron("*","0-10,16-24","*","*","?","*")
+MONITOR_CRON_SCHEDULE = Cron("*/5","*","*","*","?","*")
 
 app = Chalice(app_name='resetter')
 

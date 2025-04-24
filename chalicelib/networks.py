@@ -2,6 +2,7 @@ import json
 from string import capwords
 from os import getenv
 import traceback
+import threading
 
 import urllib
 
@@ -60,7 +61,10 @@ def getBskyCredsForUsername(username):
             return None
         else:
             bskyCreds[username] = appPassword
+            print("Got bsky creds from SSM for username", username)
             return True
+    else:
+        print("bskyCreds already set for username",username)
 
 
 
@@ -84,16 +88,33 @@ def sendSlack(payloadDict,channel=None):
         print("Couldn't post for some reason:\n" + str(e))
         return
 
-def sendBsky(message,username):
+def sendBsky(message,username,timeoutSeconds=20):
     global bskyCreds
 
     if not getBskyCredsForUsername(username):
         print("getBskyCredsForUsername failed to populate values")
         return
     
+    print("got bskyCreds, preparing to login:",message)
     from atproto import Client as BskyClient
+    from .bsky_post import post_with_preview
 
     client = BskyClient(base_url='https://bsky.social')
+
+    #loginThread = threading.Thread(target=client.login(username,bskyCreds[username]))
+    #loginThread.start()
+    #loginThread.join(timeout=timeoutSeconds)
+    #if loginThread.is_alive():
+    #    raise Exception("loginThread timed out")
     client.login(username,bskyCreds[username])
-    post = client.send_post(message)
-    return post
+    print("successful bsky login, sending")
+    #postThread = threading.Thread(target=client.send_post(message))
+    #postThread = 
+    post_with_preview(client, message)
+    #postThread.start()
+    #postThread.join(timeout=timeoutSeconds)
+    #if postThread.is_alive():
+    #    raise Exception("postThread timed out")
+    print("returning from sendBsky successfully")
+    return True
+

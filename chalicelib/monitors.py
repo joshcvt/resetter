@@ -41,6 +41,8 @@ def doMonitors(monList=None):
                     notifPk = '%s-%s-%s-%s' % (pk,mon['notifier'],mon['notifierUser'],mon['message'])
                     if mon['message']:
                         reset += mon['message']
+                    testMode = ('test' in mon)
+                    
                     print('monitor got result for for %s %s' % (pk, reset))
                     if not isFinal:
                         print('Somehow we got results even for not final, PANIC and next')
@@ -53,12 +55,13 @@ def doMonitors(monList=None):
                             print('gameDdb found for %s, nexting' % notifPk)
                             continue
                         try:
-                            notifiers[mon['notifier']](message=reset,username=mon['notifierUser'])
-                        except:
+                            notifiers[mon['notifier']](message=reset,username=mon['notifierUser']) if not testMode else print("testMode, not calling monitor")
+                        except Exception as e:
                             print("excepted out of notifier:", e)
                             continue
                         # if we're still here and not excepted out, it succeeded...
-                        setDdb(notifPk,reset)
+                        setDdb(notifPk,reset) if not testMode else print("testMode, not setting PK",notifPk)
+                            
                     else:
                         print("notifier conditions not met")
                     

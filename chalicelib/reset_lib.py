@@ -141,6 +141,7 @@ def setDdb(pk,dictVal):
             'TTL':{'N':ttlVal},
             'GameStateJson':{'S':jsonVal}
         })
+        print("setDdb succeeded")
         return ret
 
     except(Exception) as e:
