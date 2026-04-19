@@ -54,14 +54,38 @@ def download_image_as_bytes(url: str) -> Optional[bytes]:
 
 def post_with_preview(client: Client, text: str):
     """
-    Posts a Bluesky post with rich preview metadata and a proper thumbnail BlobRef.
+    Posts a Bluesky post with rich preview metadata and clickable URLs.
     """
     url_pattern = re.compile(r"(https?://[^\s]+)")
-    urls = url_pattern.findall(text)
+    matches = list(url_pattern.finditer(text))
 
     embed = None
-    if urls:
-        url = urls[0]
+    facets = []
+
+    # Build facets so URLs become clickable
+    for m in matches:
+        url = m.group(1)
+
+        # Bluesky facets require byte offsets, not character offsets
+        start_byte = len(text[:m.start()].encode("utf-8"))
+        end_byte = len(text[:m.end()].encode("utf-8"))
+
+        facets.append({
+            "index": {
+                "byteStart": start_byte,
+                "byteEnd": end_byte,
+            },
+            "features": [
+                {
+                    "$type": "app.bsky.richtext.facet#link",
+                    "uri": url,
+                }
+            ],
+        })
+
+    # Build rich preview embed using the first URL (same as your existing behavior)
+    if matches:
+        url = matches[0].group(1)
         title, description, thumb_url = scrape_rich_metadata(url)
 
         thumb_blob = None
@@ -87,6 +111,7 @@ def post_with_preview(client: Client, text: str):
     post_record = AppBskyFeedPost.Record(
         created_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         text=text,
+        facets=facets if facets else None,
         embed=embed
     )
     
