@@ -11,6 +11,11 @@ RESET_SHORT_SLACK = "RESET_SHORT_SLACK"
 
 DYNAMO_TABLE_NAME = "resetter-game-status"
 DYNAMO_DEFAULT_TTL = 60*60*24*7 # how many seconds from now to default TTL to
+
+# check if this file exists. if it does, it's an ordered list of what for Dynamo are pks.
+DYNAMO_LOCAL_CACHE_FILE = "gameCache.txt"
+MAX_DYNAMO_LOCAL_CACHE_VALUES = 10
+
 #global
 ddbClient = None
 
@@ -115,11 +120,23 @@ def getSsmParam(name,decrypt=True):
 #gameStateJson is string containing JSON game state
 def getDdb(pk):
     global ddbClient
+    
+    cache = _loadLocalCache()
+    if pk in cache:
+        # don't even worry about DDB.
+        print("found pk in local cache")
+        return pk
+    
+    # if failed, go to ddb.
+    
     try:
         if not ddbClient:
             ddbClient = boto3.client('dynamodb')
         ddbRet = ddbClient.get_item(TableName=DYNAMO_TABLE_NAME,Key={'GameId':{'S':pk}},ProjectionExpression="GameStateJson")
         if 'Item' in ddbRet:
+            # first try to write pk to the local cache, since it failed before
+            print("writing pk to local cache since find failed before")
+            _writeLocalCache(pk)
             return ddbRet['Item']['GameStateJson']['S']
         else:
             return None
@@ -130,24 +147,62 @@ def getDdb(pk):
     
 def setDdb(pk,dictVal):
     global ddbClient
+
+    ttlVal = str(int(time.time()) + DYNAMO_DEFAULT_TTL)
+    jsonVal = json.dumps(dictVal)
+
+    gameItem = {
+        'GameId':{'S':pk},
+        'TTL':{'N':ttlVal},
+        'GameStateJson':{'S':jsonVal}
+    }
+    
     try:
         if not ddbClient:
             ddbClient = boto3.client('dynamodb')
     
-        ttlVal = str(int(time.time()) + DYNAMO_DEFAULT_TTL)
-        jsonVal = json.dumps(dictVal)
-        ret = ddbClient.put_item(TableName=DYNAMO_TABLE_NAME,Item={
-            'GameId':{'S':pk},
-            'TTL':{'N':ttlVal},
-            'GameStateJson':{'S':jsonVal}
-        })
+        ddbRet = ddbClient.put_item(TableName=DYNAMO_TABLE_NAME,Item=gameItem)
         print("setDdb succeeded")
-        return ret
 
     except(Exception) as e:
         print(e)
         return None
+    
+    # intentionally not writing local cache unless DDB succeeds
+    _writeLocalCache(pk)
+    
+    return ddbRet
 
+def _loadLocalCache():
+    
+    try:
+        with open(DYNAMO_LOCAL_CACHE_FILE) as f:
+            rawLines = f.readlines()
+            lines = []
+            for rl in rawLines:
+                goodLine = rl.strip()
+                if goodLine:
+                    lines.append(goodLine)
+        return lines
+                    
+    except Exception as e:
+        print("loading localCache failed: ")
+        print(e)
+        return []
+
+def _writeLocalCache(pk):
+    try:
+        lines = _loadLocalCache()
+        if pk not in lines:
+            lines.append(pk)
+        if len(lines) > MAX_DYNAMO_LOCAL_CACHE_VALUES:
+            lines = lines[-MAX_DYNAMO_LOCAL_CACHE_VALUES:]
+        with open(DYNAMO_LOCAL_CACHE_FILE,"w") as f:
+            linesWithEndlines = list(map(lambda x : x + '\n',lines))
+            f.writelines(linesWithEndlines)
+    except Exception as e:
+        print("writing local pk failed, continuing " + pk)
+        print(e)
 
 
 class NoTeamException(Exception):
