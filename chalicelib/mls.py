@@ -57,11 +57,11 @@ ALIASES = {
 KNOWN_ABBRS = set(ALIASES.values())
 # names that fit more than one club: ask which
 AMBIGUOUS = {
-    "united": ["D.C. United", "Atlanta United", "Minnesota United"],
-    "new york": ["NYCFC", "the Red Bulls"],
-    "ny": ["NYCFC", "the Red Bulls"],
-    "la": ["the Galaxy", "LAFC"],
-    "los angeles": ["the Galaxy", "LAFC"],
+    "united": ["D.C. United", "Atlanta United FC", "Minnesota United FC"],
+    "new york": ["New York City FC", "Red Bull New York"],
+    "ny": ["New York City FC", "Red Bull New York"],
+    "la": ["LA Galaxy", "LAFC"],
+    "los angeles": ["LA Galaxy", "LAFC"],
 }
 
 _cache = {}
@@ -142,7 +142,8 @@ def _match_team(events, team):
 
 
 def _name(side):
-    return side["team"].get("shortDisplayName") or side["team"]["displayName"]
+    """full club name, as soccer writes it: 'FC Cincinnati', not 'Cincinnati'"""
+    return side["team"].get("displayName") or side["team"]["shortDisplayName"]
 
 
 def _in_city(event):
@@ -165,10 +166,9 @@ def _kickoff(event):
 
 
 def _scoreline(event):
-    """leader first; home first when level"""
+    """home first, whatever the score, as soccer writes it: 'FC Cincinnati 1, Nashville SC 2'"""
     home, away = _competitors(event)
-    first, second = (away, home) if int(away.get("score") or 0) > int(home.get("score") or 0) else (home, away)
-    return "%s %s, %s %s" % (_name(first), first.get("score", "0"), _name(second), second.get("score", "0"))
+    return "%s %s, %s %s" % (_name(home), home.get("score", "0"), _name(away), away.get("score", "0"))
 
 
 def _shootout_note(event):
@@ -193,15 +193,15 @@ def phrase_match(event):
     if state == "pre":
         if name == "STATUS_SCHEDULED":
             if stype.get("detail", "").upper() == "TBD":
-                return "%s plays %s%s, time TBD." % (_name(away), _name(home), _in_city(event))
-            return "%s plays %s %s%s." % (_name(away), _name(home), _kickoff(event), _in_city(event))
+                return "%s vs. %s%s, time TBD." % (_name(home), _name(away), _in_city(event))
+            return "%s vs. %s %s%s." % (_name(home), _name(away), _kickoff(event), _in_city(event))
         # delayed, etc.
-        return "%s vs. %s%s is %s." % (_name(away), _name(home), _in_city(event), stype.get("description", "delayed").lower())
+        return "%s vs. %s%s is %s." % (_name(home), _name(away), _in_city(event), stype.get("description", "delayed").lower())
 
     if state == "post":
         if not stype.get("completed"):
             # postponed, canceled, abandoned
-            return "%s vs. %s%s is %s." % (_name(away), _name(home), _in_city(event), stype.get("description", "off").lower())
+            return "%s vs. %s%s is %s." % (_name(home), _name(away), _in_city(event), stype.get("description", "off").lower())
         ret = "Full time%s, %s" % (_in_city(event), _scoreline(event))
         if name == "STATUS_FINAL_AET":
             ret += " after extra time"
