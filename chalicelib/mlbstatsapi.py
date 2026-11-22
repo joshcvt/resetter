@@ -374,7 +374,13 @@ def get(team,fluidVerbose=True,rewind=False,ffwd=False,inOverride=False,date=Non
     return rv
 
 def getFinal(team):
-    retTuples = get(team=team,returnFinalTuple=True)
+    # no game today is the normal off-day/offseason case, not an error (matches nhl.getFinal).
+    # NoTeamException still propagates: that's a monitor config mistake.
+    try:
+        retTuples = get(team=team,returnFinalTuple=True)
+    except NoGameException as e:
+        print("no game today for %s, nothing to monitor" % team)
+        return None
     retSet = []
     for retTuple in retTuples:
         try:
