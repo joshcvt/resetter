@@ -52,12 +52,48 @@ def _raise_for_xrpc(resp, method: str):
     raise RuntimeError(f"Bluesky {method} failed with HTTP {resp.status_code}: {detail}")
 
 
+YOUTUBE_ID_RE = re.compile(r"(?:youtube\.com/(?:watch\?(?:[^#\s]*&)?v=|shorts/|embed/|live/)|youtu\.be/)([A-Za-z0-9_-]{11})")
+
+
+def youtube_metadata(url: str, video_id: str):
+    """
+    YouTube serves requests from AWS a stripped page (title "- YouTube", no og: tags), so scraping fails there.
+    Its oEmbed endpoint gives the real title, and the thumbnail URL can be built from the video ID.
+    Returns (title, description, image_url); title is "" if oEmbed failed.
+    """
+    thumb = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
+    try:
+        resp = requests.get("https://www.youtube.com/oembed", params={"url": url, "format": "json"}, timeout=6)
+        resp.raise_for_status()
+        data = resp.json()
+        author = data.get("author_name", "")
+        return (data.get("title", "")[:300], (f"{author} on YouTube" if author else "")[:300],
+                data.get("thumbnail_url") or thumb)
+    except Exception as e:
+        print(f"[YouTube oEmbed Error] {e}")
+        return "", "", thumb
+
+
 # when the vibecoding hits...
 
 def scrape_rich_metadata(url: str):
     """
-    Scrapes title, description, and og:image from a URL.
+    Scrapes title, description, and og:image from a URL (YouTube links go through oEmbed first).
     """
+    yt = YOUTUBE_ID_RE.search(url)
+    if yt:
+        title, description, image_url = youtube_metadata(url, yt.group(1))
+        if title:
+            return title, description, image_url
+        # oEmbed failed: fall back to scraping, but keep the thumbnail we can build from the video ID
+        scraped_title, scraped_description, scraped_image = _scrape_page_metadata(url)
+        if scraped_title.strip(" -") in ("YouTube", "Untitled", ""):
+            scraped_title = "YouTube video"
+        return scraped_title, scraped_description, scraped_image or image_url
+    return _scrape_page_metadata(url)
+
+
+def _scrape_page_metadata(url: str):
     try:
         headers = {"User-Agent": "Mozilla/5.0 (compatible; BlueskyBot/1.0)"}
         response = requests.get(url, headers=headers, timeout=6)
