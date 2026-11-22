@@ -438,19 +438,16 @@ def _getResetWithMetadata(team,fluidVerbose=False,rewind=False,ffwd=False,date=N
 
 
 def getFinal(team,fluidVerbose=False,rewind=False,ffwd=False,date=None,gameFormat=RESET_TEXT):
-    # for the given team, if their game is final, get a primary key, a reset, if it's final, and if it's a win. If it isn't final, return None.
-    # primary key is because there can be split-squad games preseason, and we'd like to reuse the framework for baseball doubleheaders too.
+    # for the given team, a list of (primary key, reset, isFinal, isWin) for its final games, or None if there are none.
+    # a list because there can be split-squad games preseason; doMonitors expects one, as from mlbstatsapi.getFinal.
+    # NoTeamException and fetch errors propagate: they mean a bad monitor config or a feed problem, not "no game".
     try:
-        gameMeta = _getResetWithMetadata(team,fluidVerbose,rewind,ffwd,date,gameFormat)
-        if gameMeta[GAME_ISFINAL]:
-            return(gameMeta[GAME_PK],gameMeta[GAME_RESET],gameMeta[GAME_ISFINAL],gameMeta[GAME_IS_WIN_FOR_TEAM])
-        else:
-            return None
-
-    except NoGameException as e:
+        gameMetas = _getResetWithMetadata(team,fluidVerbose,rewind,ffwd,date,gameFormat)
+    except NoGameException:
         return None
-    except Exception as e:
-        return None
+    # trailing space so the monitor's message doesn't run into the reset, as with MLB
+    finals = [(m[GAME_PK], m[GAME_RESET] + " ", m[GAME_ISFINAL], m[GAME_IS_WIN_FOR_TEAM]) for m in gameMetas if m.get(GAME_ISFINAL)]
+    return finals or None
 
 def isGameWinForTeam(game,team):
     if team == "scoreboard":
