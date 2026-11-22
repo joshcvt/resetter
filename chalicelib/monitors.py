@@ -12,6 +12,7 @@ TEST_POST_PREFIX = "[test post, please ignore] "
 from .mlbstatsapi import get as get_mlb, getFinal as getFinalMLB
 from .ncaaf_espn import get as get_ncaaf
 from .nhl import getFinal as getFinalNHL
+from .mls import getFinal as getFinalMLS
 from .reset_lib import getDdb, setDdb
 from .networks import sendSlack, sendBsky
 
@@ -20,6 +21,7 @@ notifiers = {}
 
 sportMonitors['nhl'] = getFinalNHL
 sportMonitors['mlb'] = getFinalMLB
+sportMonitors['mls'] = getFinalMLS
 notifiers['bsky'] = sendBsky
 
 def doMonitors(monList=None):

@@ -8,6 +8,7 @@ import traceback
 from .mlbstatsapi import get as get_mlb
 from .ncaaf_espn import get as get_ncaaf
 from .nhl import get as get_nhl
+from .mls import get as get_mls
 from .reset_lib import joinOr, dateParse, rtext, NoGameException, NoTeamException, DabException, RESET_RICH_SLACK, RESET_TEXT, RESET_SHORT_SLACK
 from .networks import sendSlack
 # magic text
@@ -20,11 +21,14 @@ class NoSportException(Exception):
 def get_team(team,debug=False,inOverride=False,gameFormat=RESET_TEXT):
 
 	hold = None
+	sport = None
 	retList = None
 	opts = []
+	# leagues that recognized the team but have no game for it: decides whose "no game" message to use
+	noGameSports = []
 	
-	fns = {"mlb":get_mlb,"football":get_ncaaf,"nhl":get_nhl}
-	fns_key_order = ["mlb","nhl","football"]
+	fns = {"mlb":get_mlb,"football":get_ncaaf,"nhl":get_nhl,"mls":get_mls,"soccer":get_mls}
+	fns_key_order = ["mlb","nhl","football","mls"]
 
 	# first, try if the sport's defined.
 	try:
@@ -55,6 +59,10 @@ def get_team(team,debug=False,inOverride=False,gameFormat=RESET_TEXT):
 			except Exception as e:
 				if debug:
 					print("debug: got exception getting sport fn: " + e.__class__.__name__ + " " + str(e))
+				if isinstance(e,DabException):
+					opts.extend(e.teamOpts)
+				elif isinstance(e,NoGameException):
+					noGameSports.append(sport)
 				hold = e
 	
 	# if it isn't:
@@ -81,14 +89,19 @@ def get_team(team,debug=False,inOverride=False,gameFormat=RESET_TEXT):
 					hold = "No team " + team + " found."
 				elif isinstance(e,NoGameException):
 					hold = e
+					noGameSports.append(k)
 				elif isinstance(e,DabException):
 					opts.extend(e.teamOpts)
 								
 	if opts:
 		retList = "Did you mean " + joinOr(opts) + "?"
 	elif hold and isinstance(hold,NoGameException):
-		
-		if team in ('scoreboard','schedule',''):
+
+		if noGameSports and set(noGameSports) <= {"mls","soccer"} and str(hold):
+			# only MLS knew the team: mls.get's message knows the day asked for and the club's real name.
+			# if another league also knew it ("toronto"), the generic message below covers them all.
+			retList = str(hold)
+		elif team in ('scoreboard','schedule',''):
 			retList = str(hold)
 		else:
 			if team.upper() != team:	# don't override if it's something like NYY
@@ -110,7 +123,7 @@ def sport_strip(team):
 	splits = line.split()
 	rv = {"team":""} # default in case it's a bare league scoreboard call.
 
-	sports = ("football","nhl","mlb")
+	sports = ("football","nhl","mlb","mls","soccer")
 	if splits[-1] == "tomorrow":
 		rv["ffwd"] = True
 		splits = splits[:-1]
@@ -120,14 +133,15 @@ def sport_strip(team):
 		splits = splits[:-1]
 		print("hey, I got a date " + str(dateRes))
 	
+	# team names can be more than one word ("mls dc united", "red bulls mls")
 	if splits[0] in sports:
 		rv["sport"] = splits[0]
 		if len(splits) > 1:
-			rv["team"] = splits[1]
+			rv["team"] = " ".join(splits[1:])
 		return rv
-	elif len(splits) > 1 and splits[1] in sports:
-		rv["team"] = splits[0]
-		rv["sport"] = splits[1]
+	elif len(splits) > 1 and splits[-1] in sports:
+		rv["team"] = " ".join(splits[:-1])
+		rv["sport"] = splits[-1]
 		return rv
 	else:
 		raise NoSportException()

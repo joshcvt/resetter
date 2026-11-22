@@ -2,7 +2,7 @@
 
 (c) 2016-26 J. W. Crockett, Jr., [@joshcvt.on29.net](https://bsky.app/profile/joshcvt.on29.net)
 
-**resetter** is a Python 3.11 bot, built with [Chalice](https://github.com/aws/chalice) on AWS Lambda, that fetches game statuses and results. It covers MLB (via StatsAPI), the NHL (via the NHLE API) and college football (scraped from ESPN.com). It can:
+**resetter** is a Python 3.11 bot, built with [Chalice](https://github.com/aws/chalice) on AWS Lambda, that fetches game statuses and results. It covers MLB (via StatsAPI), the NHL (via the NHLE API), and MLS and college football (via ESPN's site API). It can:
 
 * answer a Slack slash command (`/reset WSH`, `/reset nhl 2024-4-1`, ...) with a team's or league's games,
 * post a scoreboard to Slack on a schedule, through a webhook stored in SSM Parameter Store, and
@@ -38,7 +38,7 @@ The code is licensed under the MIT License.  The data belongs to its respective 
 
   | key | meaning |
   |---|---|
-  | `sport` | `mlb` or `nhl` |
+  | `sport` | `mlb`, `nhl` or `mls` |
   | `team` | team code, e.g. `WSH` |
   | `notifier` | `bsky` (the only notifier so far) |
   | `notifierUser` | the Bluesky handle to post as; its app password must be in SSM as above |
@@ -54,7 +54,7 @@ The slash-command endpoint doesn't verify that requests really come from Slack, 
 
 ## Testing
 
-Testing is league-by-league from your development environment against live data, mostly because the leagues change both their feed spec and some of the data included in it infuriatingly often ([varying capitalization of branded arena names](https://github.com/joshcvt/resetter/commit/3168abde08cabe0be9c979056bd485f52b90f4c4) is just the tip of the iceberg) such that static test data is of very limited use (and also actual data is all copyright the leagues, and I don't want to tempt the copyright dragons any more than necessary). The `test_mlb.py`, `test_nhl.py` and `test_ncaaf.py` scripts fire off a varying set of requests for real and non-existent teams, generally for yesterday, today and tomorrow (so you get finished games, potentially in-progress today, and games that haven't started yet). `test_nhl_today.py` does the same for the NHL's scoreboard and team lookups, `test_global.py` tries ambiguous and cross-league names (`Toronto`, `NY`, `garbage`), and `test_dates.py` covers date-specific requests. `test_monitors.py` runs the monitor locally with `test` set, so it doesn't post. `test_slackPost.py` *does* post: it sends scheduled-style scoreboards to your real webhook, to the `backtalk` channel.
+Testing is league-by-league from your development environment against live data, mostly because the leagues change both their feed spec and some of the data included in it infuriatingly often ([varying capitalization of branded arena names](https://github.com/joshcvt/resetter/commit/3168abde08cabe0be9c979056bd485f52b90f4c4) is just the tip of the iceberg) such that static test data is of very limited use (and also actual data is all copyright the leagues, and I don't want to tempt the copyright dragons any more than necessary). The `test_mlb.py`, `test_nhl.py`, `test_mls.py` and `test_ncaaf.py` scripts fire off a varying set of requests for real and non-existent teams, generally for yesterday, today and tomorrow (so you get finished games, potentially in-progress today, and games that haven't started yet). `test_nhl_today.py` does the same for the NHL's scoreboard and team lookups, `test_global.py` tries ambiguous and cross-league names (`Toronto`, `NY`, `garbage`), and `test_dates.py` covers date-specific requests. `test_monitors.py` runs the monitor locally with `test` set, so it doesn't post. `test_slackPost.py` *does* post: it sends scheduled-style scoreboards to your real webhook, to the `backtalk` channel.
 
 ----
 
