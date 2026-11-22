@@ -15,3 +15,9 @@ samples/
 .terraform
 .terraform.lock.hcl
 terraform.tfstate
+
+# macOS Finder metadata
+.DS_Store
+
+# local DynamoDB lookup cache written by reset_lib when run outside Lambda
+gameCache.txt

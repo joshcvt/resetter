@@ -17,9 +17,19 @@
             "ssm:GetParameters"
         ],
         "Resource": [
-            "arn:aws:ssm:us-east-1:123456789012:parameter/resetter/slack_web_hook_url",
-            "arn:aws:ssm:us-east-1:123456789012:parameter/resetter/bsky_username",
-            "arn:aws:ssm:us-east-1:123456789012:parameter/resetter/bsky_apppassword"
+          "arn:aws:ssm:us-east-1:123456789012:parameter/resetter/*"
+        ]
+      },
+      {
+        "Effect":"Allow",
+        "Action": [
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:PutParameter",
+          "ssm:DeleteParameter"
+        ],
+        "Resource": [
+          "arn:aws:ssm:us-east-1:123456789012:parameter/resetter/bsky/*"
         ]
       },
       {
@@ -31,6 +41,11 @@
           "dynamodb:UpdateTable"
         ],
         "Resource": "arn:aws:dynamodb:us-east-1:123456789012:table/resetter-game-status"
+      },
+      {
+        "Effect": "Allow",
+        "Action": "lambda:InvokeFunction",
+        "Resource": "arn:aws:lambda:us-east-1:123456789012:function:resetter-dev-monitorChecker"
       }
     ]
-}
+  }

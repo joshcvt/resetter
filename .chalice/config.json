@@ -6,7 +6,14 @@
       "autogen_policy": false,
       "iam_policy_file": "policy-dev.json",
       "environment_variables": {
+        "ENABLE_TEST_POST": "false",
         "MONITOR_SET_JSON":"[{\"sport\":\"mlb\",\"team\":\"WSH\",\"notifier\":\"bsky\",\"notifierUser\":\"journeybot.on29.net\",\"winOnly\":\"true\",\"message\":\"AND NOW IT'S TIME FOR SOME JOURNEY! https://www.youtube.com/watch?v=LatorN4P9aA\"}]"
+      },
+      "lambda_functions": {
+        "monitorChecker": {
+          "lambda_memory_size": 1024,
+          "lambda_timeout": 120
+        }
       }
     }
   }, 
