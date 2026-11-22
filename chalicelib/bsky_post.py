@@ -1,13 +1,56 @@
 import re
 import requests
-from typing import Optional
+from typing import Optional, Tuple
 from bs4 import BeautifulSoup
-from atproto import Client, models
-from atproto_client.models import (
-    AppBskyFeedPost,
-    AppBskyEmbedExternal,
-)
 import datetime
+
+# Talks to Bluesky's XRPC HTTP API directly with requests instead of the atproto SDK:
+# the SDK took ~20 s and ~470 MB just to import in Lambda, for the three calls we need.
+# https://docs.bsky.app/docs/advanced-guides/posts
+
+DEFAULT_PDS = "https://bsky.social"
+XRPC_TIMEOUT = 15
+
+
+class BskySession:
+    """Logged-in session: the access token, the account DID, and the PDS to send writes to."""
+
+    def __init__(self, handle: str, app_password: str, pds: str = DEFAULT_PDS):
+        resp = requests.post(f"{pds}/xrpc/com.atproto.server.createSession",
+                             json={"identifier": handle, "password": app_password},
+                             timeout=XRPC_TIMEOUT)
+        _raise_for_xrpc(resp, "createSession")
+        body = resp.json()
+        self.did = body["did"]
+        self.access_jwt = body["accessJwt"]
+        # bsky.social is an entryway; writes belong on the account's own PDS, named in its DID document
+        self.pds = _pds_from_did_doc(body.get("didDoc")) or pds
+
+    def call(self, method: str, **kwargs) -> dict:
+        headers = kwargs.pop("headers", {})
+        headers["Authorization"] = f"Bearer {self.access_jwt}"
+        resp = requests.post(f"{self.pds}/xrpc/{method}", headers=headers, timeout=XRPC_TIMEOUT, **kwargs)
+        _raise_for_xrpc(resp, method)
+        return resp.json()
+
+
+def _pds_from_did_doc(did_doc) -> Optional[str]:
+    for svc in (did_doc or {}).get("service", []):
+        if svc.get("id", "").endswith("#atproto_pds") and svc.get("serviceEndpoint"):
+            return svc["serviceEndpoint"].rstrip("/")
+    return None
+
+
+def _raise_for_xrpc(resp, method: str):
+    if resp.ok:
+        return
+    try:
+        err = resp.json()
+        detail = f"{err.get('error')}: {err.get('message')}"
+    except ValueError:
+        detail = resp.text[:200]
+    raise RuntimeError(f"Bluesky {method} failed with HTTP {resp.status_code}: {detail}")
+
 
 # when the vibecoding hits...
 
@@ -38,21 +81,22 @@ def scrape_rich_metadata(url: str):
         return "Untitled", "", ""
 
 
-def download_image_as_bytes(url: str) -> Optional[bytes]:
+def download_image_as_bytes(url: str) -> Optional[Tuple[bytes, str]]:
     """
-    Downloads an image from the given URL and returns the raw bytes.
+    Downloads an image from the given URL and returns (raw bytes, MIME type).
     """
     try:
         headers = {"User-Agent": "Mozilla/5.0 (compatible; BlueskyBot/1.0)"}
         resp = requests.get(url, headers=headers, timeout=6)
         resp.raise_for_status()
-        return resp.content
+        mime = resp.headers.get("Content-Type", "").split(";")[0].strip()
+        return resp.content, (mime if mime.startswith("image/") else "image/jpeg")
     except Exception as e:
         print(f"[Image Download Error] {e}")
         return None
 
 
-def post_with_preview(client: Client, text: str):
+def post_with_preview(session: BskySession, text: str):
     """
     Posts a Bluesky post with rich preview metadata and clickable URLs.
     """
@@ -88,39 +132,33 @@ def post_with_preview(client: Client, text: str):
         url = matches[0].group(1)
         title, description, thumb_url = scrape_rich_metadata(url)
 
-        thumb_blob = None
+        external = {"uri": url, "title": title, "description": description}
         if thumb_url:
-            thumb_bytes = download_image_as_bytes(thumb_url)
-            if thumb_bytes:
+            thumb = download_image_as_bytes(thumb_url)
+            if thumb:
+                thumb_bytes, thumb_mime = thumb
                 try:
-                    uploaded_blob = client.com.atproto.repo.upload_blob(thumb_bytes)
-                    thumb_blob = uploaded_blob.blob
+                    # the returned blob ref goes into the record as-is
+                    external["thumb"] = session.call("com.atproto.repo.uploadBlob", data=thumb_bytes,
+                                                     headers={"Content-Type": thumb_mime})["blob"]
                     print("successfully uploaded blob for thumb_url",thumb_url)
                 except Exception as e:
                     print(f"[Thumbnail Upload Error] {e}")
+        else:
+            print("no preview image found for", url)
 
-        embed = AppBskyEmbedExternal.Main(
-            external=AppBskyEmbedExternal.External(
-                uri=url,
-                title=title,
-                description=description,
-                thumb=thumb_blob,  # Must be a BlobRef or None
-            )
-        )
+        embed = {"$type": "app.bsky.embed.external", "external": external}
 
-    post_record = AppBskyFeedPost.Record(
-        created_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        text=text,
-        facets=facets if facets else None,
-        embed=embed
-    )
-    
-    response = client.com.atproto.repo.create_record(
-        data=models.ComAtprotoRepoCreateRecord.Data(
-            repo=client.me.did,
-            collection="app.bsky.feed.post",
-            record=post_record.model_dump()
-        )
-    )
+    post_record = {
+        "$type": "app.bsky.feed.post",
+        "text": text,
+        "createdAt": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
+    if facets:
+        post_record["facets"] = facets
+    if embed:
+        post_record["embed"] = embed
 
-    return response
+    # returns {"uri": "at://...", "cid": "..."}
+    return session.call("com.atproto.repo.createRecord",
+                        json={"repo": session.did, "collection": "app.bsky.feed.post", "record": post_record})

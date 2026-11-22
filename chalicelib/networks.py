@@ -65,6 +65,7 @@ def getBskyCredsForUsername(username):
             return True
     else:
         print("bskyCreds already set for username",username)
+        return True
 
 
 
@@ -96,25 +97,11 @@ def sendBsky(message,username,timeoutSeconds=20):
         return
     
     print("got bskyCreds, preparing to login:",message)
-    from atproto import Client as BskyClient
-    from .bsky_post import post_with_preview
+    from .bsky_post import BskySession, post_with_preview
 
-    client = BskyClient(base_url='https://bsky.social')
-
-    #loginThread = threading.Thread(target=client.login(username,bskyCreds[username]))
-    #loginThread.start()
-    #loginThread.join(timeout=timeoutSeconds)
-    #if loginThread.is_alive():
-    #    raise Exception("loginThread timed out")
-    client.login(username,bskyCreds[username])
+    session = BskySession(username, bskyCreds[username])
     print("successful bsky login, sending")
-    #postThread = threading.Thread(target=client.send_post(message))
-    #postThread = 
-    post_with_preview(client, message)
-    #postThread.start()
-    #postThread.join(timeout=timeoutSeconds)
-    #if postThread.is_alive():
-    #    raise Exception("postThread timed out")
-    print("returning from sendBsky successfully")
+    result = post_with_preview(session, message)
+    print("returning from sendBsky successfully:", result.get("uri"))
     return True
 
