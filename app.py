@@ -6,6 +6,7 @@ from chalicelib.main import get_team, postResetToSlack
 from chalicelib.monitors import doMonitors, doTestPost
 
 from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 import json
 import os
 import uuid
@@ -24,19 +25,42 @@ def testPostEnabled():
 DEFAULT_PARAM = "WSH"
 
 SCHEDULED_POST_CHANNEL = "general"
-# the reason to do this with explicit dates is that it gets you around when the league rolls over what it thinks "today" is.
-# note this trusts UTC date to be the same as you think the date is when you call it. to fix that you need this module to be
-# timezone aware. That's... a future issue.
-TODAY = date.today()
-YESTERDAY = TODAY - timedelta(days=1)
+
+# The scheduled scoreboard posts run at SCHEDULED_POST_LOCAL_HOUR in SCHEDULER_TIMEZONE, all year.
+# These live here rather than in .chalice/config.json because `chalice deploy` builds the schedule by importing
+# this file locally, where config.json's environment_variables aren't set; here, deploy and runtime always agree.
+SCHEDULER_TIMEZONE = "America/New_York"
+SCHEDULED_POST_LOCAL_HOUR = 8
+SCHEDULER_TZ = ZoneInfo(SCHEDULER_TIMEZONE)
+
+# the request is built from explicit dates in SCHEDULER_TIMEZONE, which gets you around when each league
+# rolls over what it thinks "today" is. "{yesterday}"/"{today}" are filled in when the post runs.
 SCHEDULED_POSTS = [
-    {"request":"nhl "+ YESTERDAY.isoformat(),"banner":"Last night's NHL scores: "},
-    {"request":"nhl "+ TODAY.isoformat(),"banner":"Tonight's NHL games: "},
-    {"request":"mlb "+ YESTERDAY.isoformat(),"banner":"Last night's MLB scores: "},
-    {"request":"mlb "+ TODAY.isoformat(),"banner":"Tonight's MLB games: "} #,"useColumnarPost":True}
+    {"request":"nhl {yesterday}","banner":"Last night's NHL scores: "},
+    {"request":"nhl {today}","banner":"Tonight's NHL games: "},
+    {"request":"mlb {yesterday}","banner":"Last night's MLB scores: "},
+    {"request":"mlb {today}","banner":"Tonight's MLB games: "} #,"useColumnarPost":True}
 ]
+
+
+def utcHoursForLocalHour(tz, localHour):
+    """Every UTC hour that can be localHour:00 in tz over a year: (12, 13) for 8 AM America/New_York (EDT, EST).
+    EventBridge cron only speaks UTC, so the schedule fires on all of them and the handler keeps the right one."""
+    year = datetime.now(timezone.utc).year
+    hours, minutes = set(), set()
+    for day in range(0, 366, 7):
+        # adding a timedelta to a zoneinfo datetime keeps the wall-clock hour; astimezone applies that date's offset
+        utc = (datetime(year, 1, 1, localHour, tzinfo=tz) + timedelta(days=day)).astimezone(timezone.utc)
+        hours.add(utc.hour)
+        minutes.add(utc.minute)
+    if len(minutes) != 1:
+        raise ValueError("%s's UTC offset changes by part of an hour; one cron minute can't cover it" % tz)
+    return sorted(hours), minutes.pop()
+
+
+SCHEDULED_POST_UTC_HOURS, SCHEDULED_POST_UTC_MINUTE = utcHoursForLocalHour(SCHEDULER_TZ, SCHEDULED_POST_LOCAL_HOUR)
 # note: to disable this you must also comment out the @app.schedule annotation below
-SCHEDULED_POST_SCHEDULE = Cron(0, "12", "*", "*", "?", "*")
+SCHEDULED_POST_SCHEDULE = Cron(SCHEDULED_POST_UTC_MINUTE, ",".join(str(h) for h in SCHEDULED_POST_UTC_HOURS), "*", "*", "?", "*")
 
 #GAME_OVER_CRON_RATE = Rate(1,unit=Rate.MINUTES)
 MONITOR_CRON_SCHEDULE = Cron("*/5","*","*","*","?","*")
@@ -98,14 +122,28 @@ def triggerTestPost():
     return {"response_type": "in_channel",
             "text": "Queued a test Bluesky post (run %s). Check the account, or CloudWatch logs for %s." % (event["id"][:8], target)}
 
-# schedules are in UTC. which means they're not ready for prime time in DST-using places
-# one correct way to do this would be a double schedule and then check if it's DST in the zone you care about to decide which hour to run.
-# either that or stick the real schedule in a parameter, then run a scheduler lambda on */5 to parse it.
+def scheduledLocalTime(event):
+    """When this run was scheduled for, in SCHEDULER_TIMEZONE. Uses the event's own time rather than now, so a
+    late delivery or a retry still counts as the run it was meant to be."""
+    try:
+        when = datetime.strptime(event.time, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    except (AttributeError, TypeError, ValueError):
+        when = datetime.now(timezone.utc)
+    return when.astimezone(SCHEDULER_TZ)
+
+
 # don't forget to run the terraform in terraform/slackkey to put the webhook in SSM Parameter Store!
 @app.schedule(SCHEDULED_POST_SCHEDULE)
 def scoreboardPoster(event):
+    local = scheduledLocalTime(event)
+    if local.hour != SCHEDULED_POST_LOCAL_HOUR:
+        # the other UTC hour in the schedule, the one that isn't SCHEDULED_POST_LOCAL_HOUR at this time of year
+        print("skipping: scheduled for %s, posts go out at %d:00 %s" % (local.isoformat(), SCHEDULED_POST_LOCAL_HOUR, SCHEDULER_TIMEZONE))
+        return
+    dates = {"today": local.date().isoformat(), "yesterday": (local.date() - timedelta(days=1)).isoformat()}
+    print("posting scoreboards for %s (%s)" % (dates["today"], SCHEDULER_TIMEZONE))
     for sp in SCHEDULED_POSTS:
-        postResetToSlack(sp["request"],banner=sp["banner"],channel=SCHEDULED_POST_CHANNEL,useColumnarPost=(sp["useColumnarPost"] if ("useColumnarPost" in sp) else False))
+        postResetToSlack(sp["request"].format(**dates),banner=sp["banner"],channel=SCHEDULED_POST_CHANNEL,useColumnarPost=(sp["useColumnarPost"] if ("useColumnarPost" in sp) else False))
 
 
 @app.schedule(MONITOR_CRON_SCHEDULE)

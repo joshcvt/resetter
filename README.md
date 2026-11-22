@@ -21,7 +21,9 @@ The code is licensed under the MIT License.  The data belongs to its respective 
 * Unless you're using only the slash command, copy `.chalice/sample-policy-dev.json` to `.chalice/policy-dev.json` and replace the placeholder account ID `123456789012` with yours. The sample policy covers everything below: the SSM parameters under `/resetter/`, the DynamoDB table, and the Lambda invoke used by the test post. If you're using only the slash command, you don't need a custom IAM policy: copy `.chalice/sample-config-no-custom-policy.json` to `.chalice/config.json`, and comment out both `@app.schedule` decorators in `app.py` (see below).
 * `chalice deploy` and note the given API Gateway URL.  Then set up a Slash Command custom integration for your Slack team, paste in the API Gateway URL that Chalice gave you, set it as a GET request, and configure everything else at your leisure.
 
-`app.py` has two scheduled functions, `scoreboardPoster` and `monitorChecker`. Schedules can't be turned off by configuration (a Chalice limitation), so *to disable either one, comment out the `@app.schedule` decorator on its function*. Both schedules are cron expressions in UTC.
+`app.py` has two scheduled functions, `scoreboardPoster` and `monitorChecker`. Schedules can't be turned off by configuration (a Chalice limitation), so *to disable either one, comment out the `@app.schedule` decorator on its function*.
+
+The scoreboard posts go out at `SCHEDULED_POST_LOCAL_HOUR` (8 AM) in `SCHEDULER_TIMEZONE` (`America/New_York`), all year: both are set in `app.py`. EventBridge cron only speaks UTC, so the schedule fires at every UTC hour that can be 8 AM there (12:00 and 13:00 for Eastern), and the handler posts only on the one that is. `today` and `yesterday` in the posts are dates in that zone. These settings are in `app.py` rather than `.chalice/config.json` because `chalice deploy` builds the schedule from `app.py` on your machine, where the config file's environment variables aren't set.
 
 ### Scheduled Slack scoreboard posts
 
