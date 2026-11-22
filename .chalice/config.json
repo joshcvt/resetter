@@ -11,7 +11,7 @@
       },
       "lambda_functions": {
         "monitorChecker": {
-          "lambda_memory_size": 1024,
+          "lambda_memory_size": 256,
           "lambda_timeout": 120
         }
       }
